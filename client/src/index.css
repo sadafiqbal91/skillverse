@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: #0b0b1a;
+  color: #e5e7eb;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ✨ Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Poora page narmi se aaye */
+.page-enter { animation: fadeUp 0.4s ease-out both; }
+
+/* Bachay ek ke baad ek aayein */
+.stagger > * { animation: fadeUp 0.5s ease-out both; }
+.stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.stagger > *:nth-child(5) { animation-delay: 0.24s; }
+.stagger > *:nth-child(6) { animation-delay: 0.30s; }
+
+/* Progress bar baayen se bhare */
+.bar-grow { transform-origin: left; animation: grow 0.9s ease-out both; }
+
+/* ♿ Reduce motion wale users ke liye animations band */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .stagger > *, .bar-grow { animation: none; }
+}
+/* 🌀 3D gallery ka khud ghoomna */
+@keyframes spin3d {
+  from { transform: rotateX(-10deg) rotateY(0deg); }
+  to { transform: rotateX(-10deg) rotateY(360deg); }
+}
+.gallery3d-stage { animation: spin3d 40s linear infinite; }
+.gallery3d-stage:hover, .gallery3d-stage.paused { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .gallery3d-stage { animation: none; }
+}
+/* ===== Certificate PDF (print) ===== */
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { background: #fff !important; }
+  aside, header, .no-print { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  .page-enter, .stagger > * { animation: none !important; }
+  .print-area {
+    width: 100%;
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
