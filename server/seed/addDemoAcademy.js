@@ -192,6 +192,7 @@ const takeRetest = async (org, student, course, topic, pass) => {
     const omar = await mk("Omar Shah", "omar@demo.com", "student");
     const fatima = await mk("Fatima Noor", "fatima@demo.com", "student");
     await mk("Mr. Khan", "parent@demo.com", "parent", [ali._id]);
+    await mk("Mrs. Noor", "fatima.parent@demo.com", "parent", [fatima._id]); // 🔮 Early warning ka parent
     const students = [ali, sara, omar, fatima];
 
     const made = {};
@@ -266,6 +267,7 @@ const takeRetest = async (org, student, course, topic, pass) => {
       { Role: "Student (top)", Email: "sara@demo.com" },
       { Role: "Student (re-test ready)", Email: "omar@demo.com" },
       { Role: "Parent of Ali", Email: "parent@demo.com" },
+      { Role: "Parent of Fatima (early warning)", Email: "fatima.parent@demo.com" },
     ]);
   } catch (e) {
     console.error("❌", e.message);
