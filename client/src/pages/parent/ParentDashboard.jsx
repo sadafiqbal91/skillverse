@@ -411,6 +411,11 @@ export default function ParentDashboard() {
                         </button>
                         {open && (
                           <div className="space-y-2 px-4 pb-3 text-sm page-enter">
+                            {a.image && (
+                              <a href={a.image} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-white">
+                                <img src={a.image} alt={a.imageCaption || a.title} className="mx-auto max-h-56 w-auto object-contain" />
+                              </a>
+                            )}
                             {a.instructions && (
                               <div>
                                 <p className="text-[11px] uppercase tracking-wider text-gray-500">{t.instructions}</p>
@@ -423,7 +428,7 @@ export default function ParentDashboard() {
                                 <p className="italic text-emerald-200">💬 "{a.feedback}"</p>
                               </div>
                             )}
-                            {!a.instructions && !a.feedback && <p className="text-xs text-gray-500">No more details.</p>}
+                            {!a.instructions && !a.feedback && !a.image && <p className="text-xs text-gray-500">No more details.</p>}
 
                             {/* 🧒 Bachche ke saath jama karo */}
                             {(a.state === "pending" || a.state === "late") && a.courseId && (

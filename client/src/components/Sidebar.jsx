@@ -1,10 +1,12 @@
 import { NavLink } from "react-router-dom";
 import {
-  LayoutDashboard, BookOpen, FileText, BarChart3, AlertTriangle, Search, Users, GraduationCap, ClipboardCheck, Code2, MessageCircle,
+  LayoutDashboard, BookOpen, FileText, BarChart3, AlertTriangle, Search, Users, GraduationCap, ClipboardCheck, Code2, MessageCircle, Network,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-const menusFor = (labels) => ({
+const TREE = { school: "School Tree", college: "Sections", university: "Sections", computer_institute: "Batches", online_academy: "Batches" };
+
+const menusFor = (labels, type) => ({
   student: [
     { to: "/student", icon: LayoutDashboard, label: "Dashboard", end: true },
     { to: "/student/courses", icon: BookOpen, label: "My " + labels.course + "s" },
@@ -23,6 +25,7 @@ const menusFor = (labels) => ({
   ],
   orgadmin: [
     { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
+    { to: "/admin/tree", icon: Network, label: TREE[type] || "Classes" },
     { to: "/admin/results", icon: BarChart3, label: "Results" },
     { to: "/admin/students", icon: Search, label: "Student Lookup" },
     { to: "/admin/users", icon: Users, label: "Users" },
@@ -38,7 +41,7 @@ const TYPE = {
 export default function Sidebar({ open, onClose }) {
   const { user, organization } = useAuth();
   const labels = organization?.settings?.labels || { course: "Course" };
-  const items = menusFor(labels)[user?.role] || [];
+  const items = menusFor(labels, organization?.type)[user?.role] || [];
 
   return (
     <>

@@ -29,6 +29,7 @@ import WeakTopicsPage from "./pages/teacher/WeakTopicsPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import StudentLookupPage from "./pages/admin/StudentLookupPage";
 import UsersPage from "./pages/admin/UsersPage";
+import SchoolTreePage from "./pages/admin/SchoolTreePage";
 import ParentDashboard from "./pages/parent/ParentDashboard";
 
 function Soon({ title }) {
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="results" element={<ResultsPage canRemind={false} />} />
             <Route path="students" element={<StudentLookupPage />} />
             <Route path="users" element={<UsersPage />} />
+            <Route path="tree" element={<SchoolTreePage />} />
             <Route path="*" element={<Soon title="Admin page" />} />
           </Route>
 

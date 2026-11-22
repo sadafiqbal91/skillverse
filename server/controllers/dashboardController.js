@@ -7,6 +7,7 @@ const Intervention = require("../models/Intervention");
 const Submission = require("../models/Submission");
 const Note = require("../models/Note");
 const Organization = require("../models/Organization");
+const SchoolClass = require("../models/SchoolClass");
 const { buildProgress } = require("./progressController");
 const { buildEarlyWarnings } = require("../services/earlyWarningService");
 const { notify, parentsOf } = require("../services/interventionService");
@@ -225,6 +226,21 @@ const remindEarly = async (req, res) => {
         meta: { courseId: course._id },
       });
     }
+    // 🏫 Principal ko bhi batao (class + teacher ke naam ke saath)
+    const admins = await User.find({ organizationId: req.user.organizationId, role: "orgadmin", _id: { $ne: req.user.userId } }).select("_id");
+    if (admins.length) {
+      const [sender, klass] = await Promise.all([
+        User.findById(req.user.userId).select("name"),
+        SchoolClass.findOne({ organizationId: req.user.organizationId, courseIds: course._id }).select("name"),
+      ]);
+      await notify(req.user.organizationId, admins.map((a) => a._id), {
+        type: "early_warning_sent",
+        title: "🔮 " + (klass ? klass.name + " · " : "") + course.title + ": early reminder sent",
+        message: (sender?.name || "A teacher") + " noticed " + (student?.name || "a student") + " early and sent a reminder" + (parents.length ? " to the student and parents." : " to the student."),
+        meta: { courseId: course._id },
+      });
+    }
+
     res.json({ message: "Reminder sent to the student" + (parents.length ? " and parents" : "") + " 🔔" });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid ID" });

@@ -25,8 +25,9 @@ const Submission = load("Submission");
 const Intervention = load("Intervention");
 const Note = load("Note");
 const ChatMessage = load("ChatMessage");
+const SchoolClass = load("SchoolClass");
 const ALL = [User, Course, Module, Lesson, Enrollment, Quiz, Question, Attempt, Assignment, Submission, Intervention, Note, ChatMessage,
-  load("Notification"), load("MyNote")].filter(Boolean);
+  load("Notification"), load("MyNote"), load("SchoolClass")].filter(Boolean);
 
 const SLUG = "demo";
 const PASS = "demo123";
@@ -256,6 +257,21 @@ const takeRetest = async (org, student, course, topic, pass) => {
       await ChatMessage.create({ organizationId: org._id, courseId: maths.course._id, name: "AI Helper", role: "ai", kind: "ai", replyTo: q._id, review: "pending",
         text: "Great question! Think of one pizza. If you cut it into 2 parts, each part is big. If you cut the same pizza into 4 parts, each part is smaller. So 1/2 (one of 2 big parts) is more pizza than 1/4 (one of 4 small parts). 🍕" });
       await notify(org._id, [teachers.bilal._id], { type: "ask_teacher", title: "❓ Ali Khan asked in Mathematics: Class 5", message: "Why is 1/2 bigger than 1/4? · AI answered, please check it", meta: { courseId: maths.course._id } });
+    }
+
+    // 🌳 School Tree: Class 5-A, class teacher, subjects, timetable
+    if (SchoolClass) {
+      const M = maths.course._id, S = science.course._id, C = computer.course._id;
+      await SchoolClass.create({
+        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.hina._id, courseIds: [M, S, C],
+        timetable: [
+          { day: "Mon", time: "08:30", courseId: M }, { day: "Mon", time: "09:30", courseId: S },
+          { day: "Tue", time: "08:30", courseId: C }, { day: "Tue", time: "09:30", courseId: M },
+          { day: "Wed", time: "08:30", courseId: S }, { day: "Wed", time: "09:30", courseId: M },
+          { day: "Thu", time: "08:30", courseId: M }, { day: "Thu", time: "09:30", courseId: C },
+          { day: "Fri", time: "08:30", courseId: S },
+        ],
+      });
     }
 
     console.log("\n✅ Demo Academy ready! Institute code: demo · Password for everyone: " + PASS + "\n");

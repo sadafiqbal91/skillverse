@@ -79,6 +79,7 @@ app.use("/api/answers", require("./routes/answerRoutes"));
 app.use("/api/summary", require("./routes/summaryRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes")); // 💬 Class chat + Ask teacher
 app.use("/api/diagram", require("./routes/diagramRoutes")); // ✨ AI diagram for assignments
+app.use("/api/classes", require("./routes/classRoutes")); // 🌳 School Tree
 
 // ❌ Koi bhi error: saaf message
 app.use((err, req, res, next) => {

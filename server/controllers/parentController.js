@@ -9,6 +9,7 @@ const Submission = require("../models/Submission");
 const Note = require("../models/Note");
 const { buildProgress } = require("./progressController");
 const { buildAnswers } = require("../services/answerService");
+const { buildEarlyWarnings } = require("../services/earlyWarningService");
 
 // Kya ye bachcha isi parent ka hai? 🔐
 const isMyChild = async (req) => {
@@ -106,6 +107,8 @@ const childOverview = async (req, res) => {
                 course: a.courseId?.title,
         courseId: a.courseId?._id,
         instructions: a.instructions || a.description || "",
+        image: a.image || null, // 🖼️ teacher ki picture
+        imageCaption: a.imageCaption || "",
 
         due,
         state,
@@ -120,6 +123,7 @@ const childOverview = async (req, res) => {
     const weak = progress.weakTopics;
     const oneOnOne = help.filter((h) => h.oneOnOne);
     const late = assignmentList.filter((a) => a.state === "late");
+    const early = (await buildEarlyWarnings(orgId).catch(() => [])).filter((w) => String(w.studentId) === String(childId));
     let status = "green";
     let reason = `${name} is doing well. Keep encouraging!`;
     let reasonUr = `${name} ka kaam achha chal raha hai. Shabash dete rahein!`;
@@ -133,6 +137,18 @@ const childOverview = async (req, res) => {
       const what = weak.slice(0, 2).join(" and ") || "quizzes";
       reason = `${name} is finding ${what} difficult. Please help with practice at home.`;
       reasonUr = `${name} ko ${what.replace(" and ", " aur ")} mein madad chahiye. Ghar par practice karwayein.`;
+    } else if (early.length) {
+      // 🔮 Early warning: abhi fail nahi, lekin khatra
+      status = "yellow";
+      const w = early[0];
+      const why = w.reasons.map((r) => r.text).join(", ");
+      const whyUr = w.reasons.map((r) => r.text
+        .replace("Scores dropping", "Marks gir rahe hain")
+        .replace("No activity for", "Itne din se kuch nahi kiya:")
+        .replace("homework missing", "homework baqi")
+        .replace("Last quiz", "Pichla quiz")).join(", ");
+      reason = `Early warning in ${w.course}: ${why}. Please sit with ${name} for 15 minutes today.`;
+      reasonUr = `${w.course} mein pehle se khabardar: ${whyUr}. Aaj ${name} ke saath 15 minute baithein.`;
     } else if (help.length) {
       status = "yellow";
       reason = `${name} is practising ${help[0].topic}. ${help[0].note}`;
