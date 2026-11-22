@@ -8,6 +8,8 @@ const Submission = require("../models/Submission");
 const Note = require("../models/Note");
 const Organization = require("../models/Organization");
 const { buildProgress } = require("./progressController");
+const { buildEarlyWarnings } = require("../services/earlyWarningService");
+const { notify, parentsOf } = require("../services/interventionService");
 
 const DAY = 24 * 60 * 60 * 1000;
 const ACTIVE = ["needs_practice", "intervention", "one_on_one"];
@@ -182,4 +184,52 @@ const studentQuickView = async (req, res) => {
   }
 };
 
-module.exports = { instructorDashboard, adminDashboard, searchStudents, studentQuickView };
+// GET /api/dashboard/early-warning → 🔮 kaun agle test mein mushkil mein aa sakta hai
+const earlyWarning = async (req, res) => {
+  try {
+    if (!["instructor", "orgadmin"].includes(req.user.role)) return res.status(403).json({ message: "Only teachers and principals can see this" });
+    const opts = req.user.role === "instructor" ? { instructorId: req.user.userId } : {};
+    const students = await buildEarlyWarnings(req.user.organizationId, opts);
+    res.json({ count: students.length, students });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// POST /api/dashboard/early-warning/remind { studentId, courseId } → 🔔 bache + parent ko pyara sa yaad dilana
+const remindEarly = async (req, res) => {
+  try {
+    if (!["instructor", "orgadmin"].includes(req.user.role)) return res.status(403).json({ message: "Only teachers and principals can see this" });
+    const { studentId, courseId } = req.body;
+    const filter = { _id: courseId, organizationId: req.user.organizationId };
+    if (req.user.role === "instructor") filter.instructorId = req.user.userId;
+    const course = await Course.findOne(filter).select("title");
+    if (!course) return res.status(404).json({ message: "Course not found" });
+    const enrolled = await Enrollment.exists({ courseId: course._id, studentId });
+    if (!enrolled) return res.status(404).json({ message: "Student is not in this course" });
+
+    const student = await User.findById(studentId).select("name");
+    const first = (student?.name || "").split(" ")[0] || "there";
+    await notify(req.user.organizationId, [studentId], {
+      type: "early_warning",
+      title: "💪 " + course.title + ": let's get ready together",
+      message: "Hi " + first + "! Your teacher wants to help you before the next test. Finish your homework and practise a little today. You can do it! 🌟",
+      meta: { courseId: course._id },
+    });
+    const parents = await parentsOf(studentId);
+    if (parents.length) {
+      await notify(req.user.organizationId, parents, {
+        type: "early_warning",
+        title: "🔮 " + (student?.name || "Your child") + " may need a little help in " + course.title,
+        message: "We noticed this early, before the next test. Please sit with your child for 15 minutes today and check the homework.",
+        meta: { courseId: course._id },
+      });
+    }
+    res.json({ message: "Reminder sent to the student" + (parents.length ? " and parents" : "") + " 🔔" });
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "Invalid ID" });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { instructorDashboard, adminDashboard, searchStudents, studentQuickView, earlyWarning, remindEarly };

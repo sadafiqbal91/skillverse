@@ -231,7 +231,9 @@ const takeRetest = async (org, student, course, topic, pass) => {
     await takeQuiz(org, maths.quiz, ali, { Fractions: 0, Decimals: 2 }, 6);           // 🔴 weak → re-test failed → notes needed
     await takeRetest(org, ali, maths.course, "Fractions", false);
     await takeQuiz(org, science.quiz, omar, { Plants: 1, "Water Cycle": 3 }, 3);       // 🌱 re-test ready (audience can try)
-    await takeQuiz(org, maths.quiz, fatima, { Fractions: 2, Decimals: 2 }, 2);         // 🙂 average
+    await takeQuiz(org, maths.quiz, fatima, { Fractions: 3, Decimals: 3 }, 12);        // 🔮 scores dropping: 100 → 83 → 67
+    await takeQuiz(org, maths.quiz, fatima, { Fractions: 3, Decimals: 2 }, 8);
+    await takeQuiz(org, maths.quiz, fatima, { Fractions: 2, Decimals: 2 }, 2);
     await takeQuiz(org, computer.quiz, fatima, { HTML: 3 }, 1);
 
     // 📝 Assignment with picture

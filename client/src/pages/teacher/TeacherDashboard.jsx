@@ -4,6 +4,7 @@ import { Users, Brain, LifeBuoy, ClipboardCheck, AlertTriangle, BarChart3, Sprou
 import api, { errMsg } from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
 import { Card, StatCard, Badge, Empty, Loading, ErrorBox, ProgressBar } from "../../components/ui";
+import EarlyWarningCard from "../../components/EarlyWarningCard";
 
 const toneFor = (p) =>
   p >= 70 ? { bar: "from-emerald-500 to-emerald-400", text: "text-emerald-300", label: "Strong" }
@@ -76,6 +77,9 @@ export default function TeacherDashboard() {
         <StatCard icon={LifeBuoy} value={needHelp} label="Students needing help" tone="rose" />
         <StatCard icon={ClipboardCheck} value={pending} label="Waiting for grading" tone="amber" />
       </div>
+
+      {/* 🔮 Fail hone se pehle pakro */}
+      <EarlyWarningCard />
 
       <div className="flex flex-wrap gap-2">
         {courses.map((co, i) => (

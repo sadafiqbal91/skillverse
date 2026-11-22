@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Card, StatCard, Badge, Empty, Loading, ErrorBox } from "../../components/ui";
 import TodayAtSchool from "../../components/TodayAtSchool";
 import GettingStarted from "../../components/GettingStarted";
+import EarlyWarningCard from "../../components/EarlyWarningCard";
 
 const tone = (p) => (p == null ? "bg-white/5 text-gray-400" : p >= 70 ? "bg-emerald-500/15 text-emerald-300" : p >= 50 ? "bg-amber-500/15 text-amber-300" : "bg-rose-500/15 text-rose-300");
 const LEVEL = { intervention: "bg-rose-500/15 text-rose-300", one_on_one: "bg-amber-500/15 text-amber-300" };
@@ -31,7 +32,7 @@ export default function AdminDashboard() {
         <p className="flex items-center gap-2 text-sm text-violet-300"><School size={16} /> {d.institute}</p>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome, {user?.name} 👋</h1>
         <p className="text-gray-400">Your whole institute in one screen: every teacher, every course, every student who needs help.</p>
-                <GettingStarted />
+        <GettingStarted />
         <TodayAtSchool />
       </div>
 
@@ -72,6 +73,9 @@ export default function AdminDashboard() {
           )}
         </Card>
       </div>
+
+      {/* 🔮 Fail hone se pehle pakro (poora school) */}
+      <EarlyWarningCard admin />
 
       <Card title="Teachers" icon={Presentation} action={<span className="text-xs text-gray-500">Work measured by results</span>}>
         {!d.teachers.length ? <Empty text="No teachers yet." /> : (
