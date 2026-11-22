@@ -37,10 +37,25 @@ app.use(
   rateLimit({ windowMs: 60 * 60 * 1000, limit: 40, message: { message: "AI limit reached. Please try again in an hour." } })
 );
 
-connectDB();
+// 🏠 Seedha server ka link kholo to saaf message (pehle "Cannot GET /" aata tha)
+app.get("/", (req, res) => {
+  res.json({ app: "SkillVerse API", status: "running ✅", website: "https://skillverse-mu-snowy.vercel.app" });
+});
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", app: "SkillVerse" });
+});
+
+// 🔌 Har request se pehle pakka karo ke database juda hua hai
+// (Vercel par server kuch der baad so jata hai; jaagne par pehle DB jodo, phir kaam)
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connect failed:", err.message);
+    res.status(503).json({ message: "Server is waking up. Please try again in a few seconds 🙏" });
+  }
 });
 
 // Routes
