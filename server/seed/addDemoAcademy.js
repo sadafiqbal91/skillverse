@@ -51,6 +51,21 @@ const PIZZA = (() => {
   return "data:image/svg+xml;base64," + Buffer.from(svg).toString("base64");
 })();
 
+// 🌱 Science homework ki tasveer: paudhay ke hissay
+const PLANT = (() => {
+  const t = (x, y, w) => '<text x="' + x + '" y="' + y + '" font-family="Arial" font-size="18" font-weight="bold" fill="#334155">' + w + '</text>';
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#ffffff"/>'
+    + '<rect x="0" y="215" width="400" height="85" fill="#d6b48a"/>'
+    + '<path d="M200 215 L200 95" stroke="#16a34a" stroke-width="8"/>'
+    + '<ellipse cx="160" cy="160" rx="38" ry="16" fill="#22c55e" transform="rotate(-25 160 160)"/>'
+    + '<ellipse cx="240" cy="140" rx="38" ry="16" fill="#22c55e" transform="rotate(25 240 140)"/>'
+    + '<circle cx="200" cy="80" r="16" fill="#facc15"/>'
+    + '<circle cx="200" cy="56" r="14" fill="#f472b6"/><circle cx="224" cy="80" r="14" fill="#f472b6"/><circle cx="176" cy="80" r="14" fill="#f472b6"/><circle cx="200" cy="104" r="14" fill="#f472b6"/>'
+    + '<path d="M200 215 L170 270 M200 215 L200 280 M200 215 L232 268" stroke="#78350f" stroke-width="5"/>'
+    + t(260, 70, "Flower") + t(285, 140, "Leaf") + t(215, 195, "Stem") + t(250, 270, "Root") + '</svg>';
+  return "data:image/svg+xml;base64," + Buffer.from(svg).toString("base64");
+})();
+
 const Q = (topic, list) => list.map(([text, options, correctIndex]) => ({ text, options, correctIndex, topic }));
 const BANK = {
   Fractions: Q("Fractions", [
@@ -278,6 +293,16 @@ const takeRetest = async (org, student, course, topic, pass) => {
       organizationId: org._id, courseId: computer.course._id, title: "Make a Web Page About You",
       description: "Use the Code Lab. Write your name in <h1> and 2 things you like in <p>.", topic: "HTML", dueDate: ahead(5), maxMarks: 10,
     });
+    await Assignment.create({
+      organizationId: org._id, courseId: science.course._id, title: "Parts of a Plant",
+      description: "Look at the picture. Draw a plant in your copy and label 4 parts: root, stem, leaf, flower. Upload a photo.",
+      topic: "Plants", dueDate: ahead(4), maxMarks: 10, image: PLANT, imageKind: "diagram", imageCaption: "A plant with its root, stem, leaf and flower",
+    });
+    await Assignment.create({
+      organizationId: org._id, courseId: urdu.course._id, title: "پانچ اسم لکھیں",
+      description: "اپنے گھر کی پانچ چیزوں کے نام لکھیں۔ مثال: کرسی، کتاب",
+      topic: "اسم", dueDate: ahead(6), maxMarks: 10,
+    });
 
     // 💬 Chat: ek sawal jo teacher ke review ka intezar kar raha hai
     if (ChatMessage) {
@@ -291,7 +316,7 @@ const takeRetest = async (org, student, course, topic, pass) => {
     if (SchoolClass) {
       const M = maths.course._id, S = science.course._id, C = computer.course._id, U = urdu.course._id;
       await SchoolClass.create({
-        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.hina._id, courseIds: [M, S, C, U],
+        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.bilal._id, courseIds: [M, S, C, U],
         timetable: [
           { day: "Mon", time: "08:30", courseId: M }, { day: "Mon", time: "09:30", courseId: S },
           { day: "Tue", time: "08:30", courseId: C }, { day: "Tue", time: "09:30", courseId: M },
@@ -306,8 +331,8 @@ const takeRetest = async (org, student, course, topic, pass) => {
     console.log("\n✅ Demo Academy ready! Institute code: demo · Password for everyone: " + PASS + "\n");
     console.table([
       { Role: "Principal", Email: "principal@demo.com" },
-      { Role: "Teacher (Maths + Computer)", Email: "teacher@demo.com" },
-      { Role: "Teacher (Science)", Email: "science@demo.com" },
+      { Role: "Teacher (Maths + Computer, class teacher 5-A)", Email: "teacher@demo.com" },
+      { Role: "Teacher (Science + Urdu)", Email: "science@demo.com" },
       { Role: "Student (weak in Fractions)", Email: "student@demo.com" },
       { Role: "Student (top)", Email: "sara@demo.com" },
       { Role: "Student (re-test ready)", Email: "omar@demo.com" },
