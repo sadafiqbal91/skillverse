@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ClipboardCheck, Plus, X, ChevronDown, ExternalLink, Clock, FileText, Camera, Sparkles, ImageIcon, RefreshCw } from "lucide-react";
+import { ClipboardCheck, Plus, X, ChevronDown, ExternalLink, Clock, FileText, Camera, Sparkles, ImageIcon, RefreshCw, Trash2 } from "lucide-react";
 import api, { errMsg } from "../../api/api";
 import { Card, Badge, Empty, Loading, ErrorBox } from "../../components/ui";
 import { openFile, prepareUpload } from "../../utils/upload";
@@ -213,6 +213,8 @@ export default function GradingPage() {
   const [form, setForm] = useState({ title: "", description: "", topic: "", dueDate: "", maxMarks: 10 });
   const [pic, setPic] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [askDel, setAskDel] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api.get("/courses?mine=true")
@@ -245,6 +247,23 @@ export default function GradingPage() {
       flash(errMsg(e2), true);
     } finally {
       setCreating(false);
+    }
+  };
+
+  // 🗑️ Ghalti se bana assignment hatana
+  const remove = async (id) => {
+    setDeleting(true);
+    try {
+      const r = await api.delete(`/assignments/${id}`);
+      flash(r.data.message);
+      setAskDel(null);
+      if (open === id) setOpen(null);
+      loadList();
+    } catch (e2) {
+      flash(errMsg(e2), true);
+      setAskDel(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -306,7 +325,9 @@ export default function GradingPage() {
             const isOpen = open === a._id;
             return (
               <Card key={a._id}>
-                <button onClick={() => setOpen(isOpen ? null : a._id)} className="flex w-full flex-col gap-3 text-left md:flex-row md:items-center md:justify-between">
+                <div role="button" tabIndex={0} onClick={() => setOpen(isOpen ? null : a._id)}
+                  onKeyDown={(e) => { if (e.key === "Enter") setOpen(isOpen ? null : a._id); }}
+                  className="flex w-full cursor-pointer flex-col gap-3 text-left md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-3">
                   {a.image && <img src={a.image} alt="" className="h-14 w-14 shrink-0 rounded-lg bg-white object-contain" />}
                   <div>
@@ -321,9 +342,23 @@ export default function GradingPage() {
                   <div className="flex items-center gap-2 text-xs">
                     <Badge className="bg-sky-500/15 text-sky-300">{a.submitted}/{a.students} submitted</Badge>
                     {toGrade > 0 ? <Badge className="bg-amber-500/15 text-amber-300">{toGrade} to grade</Badge> : <Badge className="bg-emerald-500/15 text-emerald-300">All graded</Badge>}
+                    {askDel === a._id ? (
+                      <span onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 rounded-lg bg-rose-500/10 px-2 py-1 text-rose-200">
+                        Delete?
+                        <button type="button" disabled={deleting} onClick={() => remove(a._id)} className="rounded-md bg-rose-600 px-2 py-0.5 font-semibold text-white hover:bg-rose-500 disabled:opacity-50">
+                          {deleting ? "..." : "Yes"}
+                        </button>
+                        <button type="button" onClick={() => setAskDel(null)} className="rounded-md bg-white/10 px-2 py-0.5 hover:bg-white/20">No</button>
+                      </span>
+                    ) : (
+                      <button type="button" title="Delete assignment" onClick={(e) => { e.stopPropagation(); setAskDel(a._id); }}
+                        className="rounded-lg p-1.5 text-gray-500 transition hover:bg-rose-500/10 hover:text-rose-300">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                     <ChevronDown size={18} className={`text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                   </div>
-                </button>
+                </div>
                 {isOpen && <Submissions assignment={a} onChanged={loadList} flash={flash} />}
               </Card>
             );

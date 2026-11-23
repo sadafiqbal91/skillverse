@@ -216,4 +216,33 @@ const mySubmissions = async (req, res) => {
   res.json({ count: submissions.length, submissions });
 };
 
-module.exports = { createAssignment, listAssignments, submitAssignment, listSubmissions, gradeSubmission, mySubmissions };
+// DELETE /api/assignments/:id → sirf us subject ki teacher, aur sirf jab kisi ne submit na kiya ho
+const deleteAssignment = async (req, res) => {
+  try {
+    const a = await Assignment.findOne({ _id: req.params.id, organizationId: req.user.organizationId });
+    if (!a) return res.status(404).json({ message: "Assignment not found" });
+    const course = await ownsCourse(a.courseId, req);
+    if (!course) return res.status(403).json({ message: "Only the teacher of this subject can delete it" });
+
+    const done = await Submission.countDocuments({ assignmentId: a._id });
+    if (done) {
+      return res.status(400).json({ message: `${done} student${done > 1 ? "s have" : " has"} already submitted, so it can't be deleted.` });
+    }
+
+    await a.deleteOne();
+
+    const ens = await Enrollment.find({ courseId: a.courseId }).select("studentId");
+    await notify(req.user.organizationId, ens.map((e) => e.studentId), {
+      type: "assignment_removed",
+      title: `🗑️ Assignment removed: ${a.title}`,
+      message: `${course.title}: your teacher removed this assignment. You don't need to do it.`,
+      meta: { courseId: a.courseId },
+    });
+
+    res.json({ message: "Assignment deleted 🗑️ Students were told." });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+module.exports = { createAssignment, listAssignments, submitAssignment, listSubmissions, gradeSubmission, mySubmissions, deleteAssignment };
