@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Network, Plus, Pencil, Trash2, X, GraduationCap, CalendarDays, Clock, BookOpen, Users } from "lucide-react";
+import { Network, Plus, Pencil, Trash2, X, GraduationCap, CalendarDays, Clock, BookOpen, Users, ChevronDown, Search } from "lucide-react";
 import api, { errMsg } from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -123,14 +123,15 @@ function ClassForm({ w, data, initial, onClose, onSaved }) {
   );
 }
 
-export function ClassCard({ k, w, onEdit, onDelete, readOnly = false }) {
+export function ClassCard({ k, w, onEdit, onDelete, readOnly = false, defaultOpen = true }) {
   const [tab, setTab] = useState("subjects");
+  const [open, setOpen] = useState(defaultOpen);
   const byDay = DAYS.map((d) => [d, k.timetable.filter((t) => t.day === d)]).filter(([, list]) => list.length);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 bg-gradient-to-r from-violet-600/15 to-transparent p-5">
-        <div>
+      <div className={"flex flex-wrap items-start justify-between gap-3 bg-gradient-to-r from-violet-600/15 to-transparent p-5 " + (open ? "border-b border-white/10" : "")}>
+        <div role="button" tabIndex={0} onClick={() => setOpen((o) => !o)} onKeyDown={(e) => e.key === "Enter" && setOpen((o) => !o)} className="flex-1 cursor-pointer">
           <h2 className="flex items-center gap-2 text-xl font-bold">📚 {k.name}</h2>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-300">
             <GraduationCap size={15} className="text-violet-300" /> {w.lead}: <b>{k.classTeacher?.name || "Not set"}</b>
@@ -143,11 +144,18 @@ export function ClassCard({ k, w, onEdit, onDelete, readOnly = false }) {
             {k.totals.quietThisWeek > 0 && <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-300">⚠️ {k.totals.quietThisWeek} with no work this week</span>}
           </div>
         </div>
-        {!readOnly && <div className="flex gap-1.5">
-          <button onClick={onEdit} className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20"><Pencil size={13} /> Edit</button>
-          <button onClick={onDelete} className="rounded-lg px-2 py-1.5 text-gray-500 hover:bg-rose-500/10 hover:text-rose-300"><Trash2 size={15} /></button>
-        </div>}
+        <div className="flex items-center gap-1.5">
+          {!readOnly && <>
+            <button onClick={onEdit} className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20"><Pencil size={13} /> Edit</button>
+            <button onClick={onDelete} className="rounded-lg px-2 py-1.5 text-gray-500 hover:bg-rose-500/10 hover:text-rose-300"><Trash2 size={15} /></button>
+          </>}
+          <button onClick={() => setOpen((o) => !o)} title={open ? "Close" : "Open"} className="rounded-lg p-1.5 text-gray-400 hover:bg-white/10 hover:text-white">
+            <ChevronDown size={20} className={"transition-transform " + (open ? "rotate-180" : "")} />
+          </button>
+        </div>
       </div>
+
+      {open && <>
 
       <div className="flex gap-1 border-b border-white/10 px-4 pt-3 text-sm">
         {[["subjects", w.item + "s"], ["timetable", "🗓️ Timetable"], ["updates", "🕒 Latest"]].map(([key, label]) => (
@@ -225,6 +233,7 @@ export function ClassCard({ k, w, onEdit, onDelete, readOnly = false }) {
           )
         )}
       </div>
+      </>}
     </div>
   );
 }
@@ -235,6 +244,7 @@ export default function SchoolTreePage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [form, setForm] = useState(null); // null | "new" | class object
+  const [q, setQ] = useState("");
 
   const load = useCallback(() => {
     api.get("/classes").then((r) => setData(r.data)).catch((e) => setError(errMsg(e)));
@@ -255,6 +265,16 @@ export default function SchoolTreePage() {
   if (!data) return <div className="h-96 animate-pulse rounded-3xl bg-white/5" />;
 
   const free = data.courses.filter((c) => !c.inClass);
+  const many = data.classes.length > 1;
+  const shown = data.classes.filter((k) => (k.name + " " + (k.classTeacher?.name || "")).toLowerCase().includes(q.trim().toLowerCase()));
+  // 📋 Principal ke liye poore school ka chhota sa khulasa
+  const sum = data.classes.reduce((a, k) => ({
+    students: a.students + k.totals.students,
+    quiet: a.quiet + (k.totals.quietThisWeek || 0),
+    warnings: a.warnings + (k.totals.warnings || 0),
+    needHelp: a.needHelp + (k.totals.needHelp || 0),
+    quietClasses: a.quietClasses + (k.totals.quietThisWeek ? 1 : 0),
+  }), { students: 0, quiet: 0, warnings: 0, needHelp: 0, quietClasses: 0 });
 
   return (
     <div className="space-y-6">
@@ -287,10 +307,39 @@ export default function SchoolTreePage() {
         </div>
       )}
 
-      <div className="space-y-6">
-        {data.classes.map((k) => (
-          <ClassCard key={k._id} k={k} w={w} onEdit={() => setForm(k)} onDelete={() => remove(k)} />
+      {data.classes.length > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="mb-3 text-sm font-semibold">📋 This week at a glance</p>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            {[
+              ["📚", data.classes.length, w.groups, "text-white"],
+              ["🧒", sum.students, "students", "text-white"],
+              ["⚠️", sum.quiet, w.item.toLowerCase() + "s with no work" + (sum.quietClasses ? " (in " + sum.quietClasses + " " + (sum.quietClasses > 1 ? w.groups : w.group.toLowerCase()) + ")" : ""), sum.quiet ? "text-amber-300" : "text-emerald-300"],
+              ["🔮", sum.warnings, "early warnings", sum.warnings ? "text-orange-300" : "text-emerald-300"],
+              ["🙋", sum.needHelp, "need help", sum.needHelp ? "text-rose-300" : "text-emerald-300"],
+            ].map(([icon, n, label, color]) => (
+              <div key={label} className="rounded-xl bg-black/20 px-3 py-2.5">
+                <p className={"text-xl font-bold " + color}>{icon} {n}</p>
+                <p className="text-xs text-gray-400">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {many && (
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={"Search a " + w.group.toLowerCase() + " or " + w.lead.toLowerCase() + "..."}
+            className="w-full rounded-xl border border-white/10 bg-black/30 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-violet-500" />
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {shown.map((k) => (
+          <ClassCard key={k._id} k={k} w={w} defaultOpen={!many} onEdit={() => setForm(k)} onDelete={() => remove(k)} />
         ))}
+        {many && !shown.length && <p className="text-sm text-gray-500">No {w.group.toLowerCase()} found.</p>}
       </div>
 
       {data.classes.length > 0 && free.length > 0 && (
