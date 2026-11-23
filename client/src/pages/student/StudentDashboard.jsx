@@ -11,6 +11,7 @@ import ScoreGauge from "../../components/ScoreGauge";
 import TopicBars from "../../components/TopicBars";
 import ScoreTrend from "../../components/ScoreTrend";
 import NeedsPracticeCard from "../../components/NeedsPracticeCard";
+import DiaryCard from "../../components/DiaryCard";
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -69,6 +70,9 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* 📒 Aaj kya karna hai */}
+      <DiaryCard linkFor={(i) => (i.type === "homework" ? `/student/courses/${i.courseId}` : i.done ? null : `/student/quiz/${i._id}`)} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger">

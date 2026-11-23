@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Card, Empty, Loading, ErrorBox } from "../../components/ui";
 import ParentGuide from "../../components/ParentGuide";
 import AnswersDrawer from "../../components/AnswersDrawer";
+import DiaryCard from "../../components/DiaryCard";
 import { speak, stopSpeak, canSpeak } from "../../utils/speak";
 
 const T = {
@@ -323,6 +324,9 @@ export default function ParentDashboard() {
               </div>
             ))}
           </div>
+
+          {/* 📒 Bache ki diary */}
+          <DiaryCard url={`/diary/child/${cid}`} parent lang={lang} />
 
           {/* 📚 Subject cards */}
           <div>
