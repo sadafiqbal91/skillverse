@@ -5,7 +5,7 @@ import api, { errMsg } from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
 
 // 🌳 Ek hi feature, har institute ki apni zubaan
-const WORDS = {
+export const WORDS = {
   school: { group: "Class", groups: "classes", lead: "Class teacher", item: "Subject", title: "School Tree", eg: "Class 5-A" },
   college: { group: "Section", groups: "sections", lead: "Section in-charge", item: "Subject", title: "Sections", eg: "1st Year - A" },
   university: { group: "Section", groups: "sections", lead: "Coordinator", item: "Course", title: "Sections", eg: "BSCS Semester 3" },
@@ -123,7 +123,7 @@ function ClassForm({ w, data, initial, onClose, onSaved }) {
   );
 }
 
-function ClassCard({ k, w, onEdit, onDelete }) {
+export function ClassCard({ k, w, onEdit, onDelete, readOnly = false }) {
   const [tab, setTab] = useState("subjects");
   const byDay = DAYS.map((d) => [d, k.timetable.filter((t) => t.day === d)]).filter(([, list]) => list.length);
 
@@ -140,12 +140,13 @@ function ClassCard({ k, w, onEdit, onDelete }) {
             <span className="rounded-full bg-white/5 px-2.5 py-1 text-gray-300"><BookOpen size={12} className="mr-1 inline" />{k.subjects.length} {w.item.toLowerCase()}s</span>
             {k.totals.warnings > 0 && <span className="rounded-full bg-orange-500/15 px-2.5 py-1 text-orange-300">🔮 {k.totals.warnings} early warning</span>}
             {k.totals.needHelp > 0 && <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-rose-300">🙋 {k.totals.needHelp} need help</span>}
+            {k.totals.quietThisWeek > 0 && <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-300">⚠️ {k.totals.quietThisWeek} with no work this week</span>}
           </div>
         </div>
-        <div className="flex gap-1.5">
+        {!readOnly && <div className="flex gap-1.5">
           <button onClick={onEdit} className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20"><Pencil size={13} /> Edit</button>
           <button onClick={onDelete} className="rounded-lg px-2 py-1.5 text-gray-500 hover:bg-rose-500/10 hover:text-rose-300"><Trash2 size={15} /></button>
-        </div>
+        </div>}
       </div>
 
       <div className="flex gap-1 border-b border-white/10 px-4 pt-3 text-sm">
@@ -163,11 +164,19 @@ function ClassCard({ k, w, onEdit, onDelete }) {
             <ul className="space-y-2">
               {k.subjects.map((s) => (
                 <li key={s._id}>
-                  <Link to={"/admin/results?course=" + s._id} className="flex flex-wrap items-center gap-3 rounded-xl bg-black/20 px-4 py-3 transition hover:bg-white/5">
+                  <Link to={readOnly ? "#" : "/admin/results?course=" + s._id} onClick={(e) => readOnly && e.preventDefault()}
+                    className={"flex flex-wrap items-center gap-3 rounded-xl bg-black/20 px-4 py-3 transition " + (readOnly ? "cursor-default" : "hover:bg-white/5")}>
                     <span className="min-w-[140px] flex-1">
                       <span className="block font-medium">{s.title}</span>
                       <span className="text-xs text-gray-500">👩‍🏫 {s.teacher}</span>
                     </span>
+                    {s.thisWeek && (s.thisWeek.homework || s.thisWeek.quizzes ? (
+                      <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
+                        ✅ This week:{s.thisWeek.homework ? " 📝 " + s.thisWeek.homework : ""}{s.thisWeek.quizzes ? " 🧠 " + s.thisWeek.quizzes : ""}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300">⚠️ No work this week</span>
+                    ))}
                     <span className="text-xs text-gray-400">{s.students} students</span>
                     {s.warnings > 0 && <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs text-orange-300">🔮 {s.warnings}</span>}
                     {s.needHelp > 0 && <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-xs text-rose-300">🙋 {s.needHelp}</span>}

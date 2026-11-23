@@ -4,6 +4,7 @@ const Submission = require("../models/Submission");
 const Enrollment = require("../models/Enrollment");
 const User = require("../models/User");
 const { notify, parentsOf } = require("../services/interventionService");
+const { alertClassTeacher } = require("../services/classAlertService");
 
 const handleError = (res, error) => {
   if (error.name === "CastError") return res.status(400).json({ message: "Invalid ID" });
@@ -49,6 +50,8 @@ const createAssignment = async (req, res) => {
       message: `${course.title}: due on ${fmt(dueDate)}.`,
       meta: { courseId },
     });
+
+    await alertClassTeacher(req.user.organizationId, courseId, req.user.userId, "gave homework: " + title);
 
     res.status(201).json({ message: "Assignment created ✅ Students were notified.", assignment });
   } catch (error) {

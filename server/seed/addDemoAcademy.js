@@ -73,6 +73,16 @@ const BANK = {
     ["Clouds are made of...", ["Water vapour", "Smoke", "Dust"], 0],
     ["Rain is part of the...", ["Water cycle", "Food chain", "Solar system"], 0],
   ]),
+  "حروفِ تہجی": Q("حروفِ تہجی", [
+    ["اردو کس طرف سے لکھی جاتی ہے؟", ["دائیں سے بائیں", "بائیں سے دائیں", "اوپر سے نیچے"], 0],
+    ["اردو کا پہلا حرف کون سا ہے؟", ["ا", "ب", "ت"], 0],
+    ["کون سا حرف آگے نہیں جڑتا؟", ["د", "ب", "س"], 0],
+  ]),
+  "اسم": Q("اسم", [
+    ["کسی چیز کے نام کو کیا کہتے ہیں؟", ["اسم", "فعل", "حرف"], 0],
+    ["'کراچی' کیا ہے؟", ["جگہ کا نام", "کوئی کام", "رنگ"], 0],
+    ["ان میں اسم کون سا ہے؟", ["کتاب", "دوڑنا", "جلدی"], 0],
+  ]),
   HTML: Q("HTML", [
     ["HTML is used to build...", ["Web pages", "Cars", "Cakes"], 0],
     ["Which tag makes a big heading?", ["<h1>", "<p>", "<end>"], 0],
@@ -113,6 +123,22 @@ const COURSES = [
       ] },
     ],
     quiz: { title: "Science Quiz 1", topics: ["Plants", "Water Cycle"] },
+  },
+  {
+    key: "urdu", teacher: "hina", title: "Urdu: Class 5", description: "اردو: حروف اور الفاظ 📖",
+    chapters: [
+      { title: "حروفِ تہجی", status: "covered", term: 1, lessons: [
+        L("اردو کے حروف", "حروفِ تہجی", "اردو زبان دائیں سے بائیں لکھی جاتی ہے۔ اس کا پہلا حرف 'ا' ہے۔\n\nکچھ حروف اگلے حرف سے جڑ جاتے ہیں، جیسے ب اور ت۔ کچھ حروف آگے نہیں جڑتے، جیسے ا، د، ر اور و۔",
+          ["اردو دائیں سے بائیں لکھی جاتی ہے", "پہلا حرف 'ا' ہے", "کچھ حروف آگے نہیں جڑتے: ا، د، ر، و"], "لفظ 'دل' میں 'د' آگے نہیں جڑتا۔",
+          [{ question: "اردو کس طرف سے لکھی جاتی ہے؟", answer: "دائیں سے بائیں" }, { question: "دو ایسے حروف بتائیں جو آگے نہیں جڑتے۔", answer: "د اور ر" }]),
+      ] },
+      { title: "الفاظ اور اسم", status: "this_week", term: 1, lessons: [
+        L("اسم کیا ہے؟", "اسم", "کسی شخص، جگہ یا چیز کے نام کو اسم کہتے ہیں۔\n\nجیسے: علی (شخص)، کراچی (جگہ)، کتاب (چیز)۔",
+          ["اسم یعنی نام", "شخص کا نام: علی", "جگہ کا نام: کراچی", "چیز کا نام: کتاب"], "'سارہ اسکول جاتی ہے' میں 'سارہ' اور 'اسکول' اسم ہیں۔",
+          [{ question: "'کتاب' اسم ہے یا نہیں؟", answer: "ہاں، یہ ایک چیز کا نام ہے" }]),
+      ] },
+    ],
+    quiz: { title: "اردو کوئز 1", topics: ["حروفِ تہجی", "اسم"] },
   },
   {
     key: "computer", teacher: "bilal", title: "Computer: Class 5", description: "Your first web page 💻",
@@ -227,7 +253,7 @@ const takeRetest = async (org, student, course, topic, pass) => {
     }
 
     // 🎭 Kahaniyan
-    const { maths, science, computer } = made;
+    const { maths, science, computer, urdu } = made;
     await takeQuiz(org, maths.quiz, sara, { Fractions: 3, Decimals: 3 }, 5);          // ⭐ top student
     await takeQuiz(org, science.quiz, sara, { Plants: 3, "Water Cycle": 3 }, 4);
     await takeQuiz(org, maths.quiz, ali, { Fractions: 0, Decimals: 2 }, 6);           // 🔴 weak → re-test failed → notes needed
@@ -237,6 +263,8 @@ const takeRetest = async (org, student, course, topic, pass) => {
     await takeQuiz(org, maths.quiz, fatima, { Fractions: 3, Decimals: 2 }, 8);
     await takeQuiz(org, maths.quiz, fatima, { Fractions: 2, Decimals: 2 }, 2);
     await takeQuiz(org, computer.quiz, fatima, { HTML: 3 }, 1);
+    await takeQuiz(org, urdu.quiz, sara, { "حروفِ تہجی": 3, "اسم": 3 }, 2);         // 📖 Urdu
+    await takeQuiz(org, urdu.quiz, ali, { "حروفِ تہجی": 3, "اسم": 2 }, 1);
 
     // 📝 Assignment with picture
     const pizza = await Assignment.create({
@@ -261,15 +289,16 @@ const takeRetest = async (org, student, course, topic, pass) => {
 
     // 🌳 School Tree: Class 5-A, class teacher, subjects, timetable
     if (SchoolClass) {
-      const M = maths.course._id, S = science.course._id, C = computer.course._id;
+      const M = maths.course._id, S = science.course._id, C = computer.course._id, U = urdu.course._id;
       await SchoolClass.create({
-        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.hina._id, courseIds: [M, S, C],
+        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.hina._id, courseIds: [M, S, C, U],
         timetable: [
           { day: "Mon", time: "08:30", courseId: M }, { day: "Mon", time: "09:30", courseId: S },
           { day: "Tue", time: "08:30", courseId: C }, { day: "Tue", time: "09:30", courseId: M },
           { day: "Wed", time: "08:30", courseId: S }, { day: "Wed", time: "09:30", courseId: M },
           { day: "Thu", time: "08:30", courseId: M }, { day: "Thu", time: "09:30", courseId: C },
-          { day: "Fri", time: "08:30", courseId: S },
+          { day: "Fri", time: "08:30", courseId: S }, { day: "Mon", time: "10:30", courseId: U },
+          { day: "Wed", time: "10:30", courseId: U }, { day: "Fri", time: "09:30", courseId: U },
         ],
       });
     }

@@ -7,6 +7,7 @@ const Lesson = require("../models/Lesson");
 const Organization = require("../models/Organization");
 const { notify, parentsOf } = require("../services/interventionService");
 const { askJSON, AIError } = require("../services/aiService");
+const { alertClassTeacher } = require("../services/classAlertService");
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -53,6 +54,8 @@ const createQuiz = async (req, res) => {
       testDate: testDate || undefined,
     });
     if (quiz.testDate) await announceTest(quiz, course, req.user.organizationId);
+    const when = quiz.testDate ? " (test on " + new Date(quiz.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ")" : "";
+    await alertClassTeacher(req.user.organizationId, course._id, req.user.userId, "made a quiz: " + title + when);
 
     res.status(201).json({ message: "Quiz created ✅", quiz });
   } catch (error) {

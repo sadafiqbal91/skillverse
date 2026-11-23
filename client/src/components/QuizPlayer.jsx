@@ -109,7 +109,7 @@ export default function QuizPlayer({ loader }) {
 
       <Card key={q._id} className="page-enter">
         <div className="text-[11px] uppercase tracking-wider text-violet-300 mb-2">{q.topic}</div>
-        <h2 className="text-xl font-semibold mb-6">{q.text}</h2>
+        <h2 dir="auto" className="text-xl font-semibold mb-6">{q.text}</h2>
         <div className="space-y-3">
           {q.options.map((opt, i) => {
             const selected = answers[q._id] === i;
@@ -129,7 +129,7 @@ export default function QuizPlayer({ loader }) {
                 <span className={`h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold ${selected ? "bg-violet-500 text-white" : "bg-white/10 text-gray-300"}`}>
                   {LETTERS[i]}
                 </span>
-                {opt}
+                <span dir="auto" className="flex-1">{opt}</span>
               </button>
             );
           })}

@@ -16,6 +16,8 @@ const embedUrl = (url) => {
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
 };
 const card = "rounded-2xl border border-white/10 bg-white/[0.03] p-6";
+// 🟢 Urdu likhai hai? (daayein se baayein + Urdu awaaz)
+const isUrdu = (t = "") => /[؀-ۿ]/.test(t);
 
 function Section({ icon: Icon, color, title, action, children }) {
   return (
@@ -33,9 +35,9 @@ function CheckItem({ n, q }) {
   const [show, setShow] = useState(false);
   return (
     <li className="rounded-xl bg-white/[0.03] p-4">
-      <p className="text-sm font-medium text-white">{n}. {q.question}</p>
+      <p dir="auto" className="text-sm font-medium text-white">{n}. {q.question}</p>
       {show ? (
-        <p className="mt-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 page-enter">✓ {q.answer}</p>
+        <p dir="auto" className="mt-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 page-enter">✓ {q.answer}</p>
       ) : (
         <button onClick={() => setShow(true)} className="mt-2 text-xs font-semibold text-violet-300 hover:text-violet-200">
           Think first, then show answer 👀
@@ -107,7 +109,7 @@ export default function LessonPage() {
   const listen = () => {
     if (talking) { stopSpeak(); setTalking(false); return; }
     const text = [lesson.title, lesson.content, ...(lesson.keyPoints || [])].join(". ");
-    setTalking(speak(text, "en", () => setTalking(false)));
+    setTalking(speak(text, isUrdu(text) ? "ur" : "en", () => setTalking(false)));
   };
 
   const copyCode = () => {
@@ -144,6 +146,8 @@ export default function LessonPage() {
   const keyPoints = lesson.keyPoints || [];
   const checks = lesson.checkYourself || [];
   const empty = !lesson.content && !keyPoints.length && !lesson.example && !lesson.exampleCode && !checks.length;
+  const urdu = isUrdu(lesson.content || lesson.title);
+  const big = urdu ? " text-lg leading-loose" : "";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
@@ -153,7 +157,7 @@ export default function LessonPage() {
         </Link>
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-violet-400">Lesson {idx + 1} of {all.length}</p>
-          <h1 className="mt-1 text-3xl font-bold text-white">{lesson.title}</h1>
+          <h1 dir="auto" className="mt-1 text-3xl font-bold text-white">{lesson.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-400">
             {lesson.durationMinutes && <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{lesson.durationMinutes} min</span>}
             {(lesson.topics || []).map((t) => <span key={t} className="rounded-full bg-white/5 px-2 py-0.5 text-xs">{t}</span>)}
@@ -178,10 +182,10 @@ export default function LessonPage() {
           <Section icon={FileText} color="text-violet-400" title="Explanation"
             action={canSpeak() && (
               <button onClick={listen} className="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/25">
-                {talking ? <Square className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />} {talking ? "Stop" : "Listen"}
+                {talking ? <Square className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />} {talking ? "Stop" : urdu ? "Listen (اردو)" : "Listen"}
               </button>
             )}>
-            <div className="whitespace-pre-line leading-relaxed text-slate-200">{lesson.content}</div>
+            <div dir="auto" className={"whitespace-pre-line leading-relaxed text-slate-200" + big}>{lesson.content}</div>
           </Section>
         )}
 
@@ -189,7 +193,7 @@ export default function LessonPage() {
           <Section icon={KeyRound} color="text-amber-400" title="Key points">
             <ul className="space-y-2">
               {keyPoints.map((k, i) => (
-                <li key={i} className="flex gap-3 text-slate-200">
+                <li key={i} dir="auto" className={"flex gap-3 text-slate-200" + big}>
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-300">{i + 1}</span>
                   <span>{k}</span>
                 </li>
@@ -200,7 +204,7 @@ export default function LessonPage() {
 
         {(lesson.example || lesson.exampleCode) && (
           <Section icon={lesson.exampleCode ? Code2 : Lightbulb} color="text-emerald-400" title="Example">
-            {lesson.example && <p className="leading-relaxed text-slate-200">💡 {lesson.example}</p>}
+            {lesson.example && <p dir="auto" className={"leading-relaxed text-slate-200" + big}>💡 {lesson.example}</p>}
             {lesson.exampleCode && (
               <div className="relative mt-3">
                 <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/60 p-4 text-sm text-emerald-200"><code>{lesson.exampleCode}</code></pre>
@@ -272,7 +276,7 @@ export default function LessonPage() {
         </div>
         {course.modules.map((m) => (
           <div key={m._id}>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">{m.title}</p>
+            <p dir="auto" className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">{m.title}</p>
             {!m.lessons.length && <p className="px-2 py-1 text-xs text-slate-600">Coming soon</p>}
             {m.lessons.map((l) => {
               const current = String(l._id) === String(id);
@@ -281,7 +285,7 @@ export default function LessonPage() {
                 <Link key={l._id} to={`/student/lessons/${l._id}`}
                   className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition ${current ? "bg-violet-500/20 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
                   {isDone ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" /> : <PlayCircle className="h-4 w-4 shrink-0 text-slate-600" />}
-                  <span className="truncate">{l.title}</span>
+                  <span dir="auto" className="truncate">{l.title}</span>
                 </Link>
               );
             })}

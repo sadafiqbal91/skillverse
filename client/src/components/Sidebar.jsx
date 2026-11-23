@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
 import {
-  LayoutDashboard, BookOpen, FileText, BarChart3, AlertTriangle, Search, Users, GraduationCap, ClipboardCheck, Code2, MessageCircle, Network,
+  LayoutDashboard, BookOpen, FileText, BarChart3, AlertTriangle, Search, Users, GraduationCap, ClipboardCheck, Code2, MessageCircle, Network, UsersRound,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
+const GROUP = { school: "Class", college: "Section", university: "Section", computer_institute: "Batch", online_academy: "Batch" };
 const TREE = { school: "School Tree", college: "Sections", university: "Sections", computer_institute: "Batches", online_academy: "Batches" };
 
 const menusFor = (labels, type) => ({
@@ -18,6 +19,7 @@ const menusFor = (labels, type) => ({
   instructor: [
     { to: "/teacher", icon: LayoutDashboard, label: "Dashboard", end: true },
     { to: "/teacher/courses", icon: BookOpen, label: "My " + labels.course + "s" },
+    { to: "/teacher/class", icon: UsersRound, label: "My " + (GROUP[type] || "Class") },
     { to: "/teacher/chat", icon: MessageCircle, label: "Class Chat" },
     { to: "/teacher/results", icon: BarChart3, label: "Results" },
     { to: "/teacher/grading", icon: ClipboardCheck, label: "Grading" },

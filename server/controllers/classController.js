@@ -44,12 +44,18 @@ const cleanBody = async (req) => {
   return out;
 };
 
-// GET /api/classes → 🌳 poora tree (principal)
-const listClasses = async (req, res) => {
-  try {
-    const org = req.user.organizationId;
+// 🗓️ Is hafte ka shuru (Somwar)
+const weekStart = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  const back = (d.getDay() + 6) % 7;
+  return new Date(d.getTime() - back * 24 * 60 * 60 * 1000);
+};
+
+// 🌳 Tree banao (principal: sab, class teacher: sirf apni class)
+const buildTree = async (org, classFilter = {}) => {
     const [classes, teachers, courses, warnings] = await Promise.all([
-      SchoolClass.find({ organizationId: org }).populate("classTeacherId", "name").sort("name"),
+      SchoolClass.find({ organizationId: org, ...classFilter }).populate("classTeacherId", "name").sort("name"),
       User.find({ organizationId: org, role: "instructor" }).select("name").sort("name"),
       Course.find({ organizationId: org }).populate("instructorId", "name").select("title instructorId status").sort("title"),
       buildEarlyWarnings(org),
@@ -65,6 +71,12 @@ const listClasses = async (req, res) => {
       Note.find({ courseId: { $in: ids } }).select("title courseId createdBy createdAt").populate("createdBy", "name").sort("-createdAt").limit(60),
     ]);
     const count = (list) => Object.fromEntries(list.map((x) => [String(x._id), x.n]));
+    // ✅/⚠️ Is hafte kis subject mein kaam diya gaya
+    const ws = weekStart();
+    const week = {};
+    const bump = (cid, k) => { const id = String(cid); week[id] = week[id] || { homework: 0, quizzes: 0 }; week[id][k]++; };
+    asg.filter((a) => new Date(a.createdAt) >= ws).forEach((a) => bump(a.courseId, "homework"));
+    quizzes.filter((q) => new Date(q.createdAt) >= ws).forEach((q) => bump(q.courseId, "quizzes"));
     const students = count(enrolls);
     const needHelp = count(helps);
     const warn = {};
@@ -85,6 +97,7 @@ const listClasses = async (req, res) => {
         return {
           _id: c._id, title: c.title, teacher: c.instructorId?.name || "No teacher", status: c.status,
           students: students[String(cid)] || 0, needHelp: needHelp[String(cid)] || 0, warnings: warn[String(cid)] || 0,
+          thisWeek: week[String(cid)] || { homework: 0, quizzes: 0 },
         };
       });
       return {
@@ -97,6 +110,7 @@ const listClasses = async (req, res) => {
           students: Math.max(0, ...subjects.map((s) => s.students)),
           needHelp: subjects.reduce((s, x) => s + x.needHelp, 0),
           warnings: subjects.reduce((s, x) => s + x.warnings, 0),
+          quietThisWeek: subjects.filter((x) => !x.thisWeek.homework && !x.thisWeek.quizzes).length,
         },
         timetable: k.timetable
           .filter((t) => courseInfo[String(t.courseId)])
@@ -111,11 +125,41 @@ const listClasses = async (req, res) => {
     });
 
     const used = new Set(classes.flatMap((k) => k.courseIds.map(String)));
-    res.json({
+    return {
       classes: out,
       teachers,
       courses: courses.map((c) => ({ _id: c._id, title: c.title, teacher: c.instructorId?.name || "", inClass: used.has(String(c._id)) })),
-    });
+    };
+};
+
+// GET /api/classes → 🌳 poora tree (principal)
+const listClasses = async (req, res) => {
+  try {
+    res.json(await buildTree(req.user.organizationId));
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// GET /api/classes/mine → 👩‍🏫 teacher: meri class (agar class teacher hoon) + mera timetable
+const myClasses = async (req, res) => {
+  try {
+    const org = req.user.organizationId;
+    const me = req.user.userId;
+    const tree = await buildTree(org, { classTeacherId: me });
+
+    // 🗓️ Mera timetable: har class mein mere subjects ke periods
+    const myCourses = await Course.find({ organizationId: org, instructorId: me }).select("title");
+    const mine = new Set(myCourses.map((c) => String(c._id)));
+    const titleOf = Object.fromEntries(myCourses.map((c) => [String(c._id), c.title]));
+    const all = await SchoolClass.find({ organizationId: org, "timetable.courseId": { $in: myCourses.map((c) => c._id) } }).select("name timetable");
+    const periods = [];
+    all.forEach((k) => k.timetable.forEach((t) => {
+      if (mine.has(String(t.courseId))) periods.push({ day: t.day, time: t.time, subject: titleOf[String(t.courseId)], className: k.name });
+    }));
+    periods.sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day) || a.time.localeCompare(b.time));
+
+    res.json({ classes: tree.classes, timetable: periods });
   } catch (error) {
     handleError(res, error);
   }
@@ -156,4 +200,4 @@ const deleteClass = async (req, res) => {
   }
 };
 
-module.exports = { listClasses, createClass, updateClass, deleteClass };
+module.exports = { listClasses, myClasses, createClass, updateClass, deleteClass };

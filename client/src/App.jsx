@@ -26,6 +26,7 @@ import RevisionTestPage from "./pages/teacher/RevisionTestPage";
 import GradingPage from "./pages/teacher/GradingPage";
 import ResultsPage from "./pages/teacher/ResultsPage";
 import WeakTopicsPage from "./pages/teacher/WeakTopicsPage";
+import MyClassPage from "./pages/teacher/MyClassPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import StudentLookupPage from "./pages/admin/StudentLookupPage";
 import UsersPage from "./pages/admin/UsersPage";
@@ -87,6 +88,7 @@ export default function App() {
             <Route path="courses/:id/revision" element={<RevisionTestPage />} />
             <Route path="quizzes/:id" element={<QuizBuilderPage />} />
             <Route path="chat" element={<ChatPage />} />
+            <Route path="class" element={<MyClassPage />} />
             <Route path="grading" element={<GradingPage />} />
             <Route path="results" element={<ResultsPage />} />
             <Route path="interventions" element={<WeakTopicsPage />} />

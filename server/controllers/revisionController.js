@@ -7,6 +7,7 @@ const Intervention = require("../models/Intervention");
 const Enrollment = require("../models/Enrollment");
 const { notify, parentsOf } = require("../services/interventionService");
 const { askJSON } = require("../services/aiService");
+const { alertClassTeacher } = require("../services/classAlertService");
 
 const MIN_PER_TOPIC = 3; // is se kam sawal hon to AI madad karega
 
@@ -198,6 +199,8 @@ const createRevision = async (req, res) => {
       message: name + ". " + picked.length + " questions, " + quiz.timeLimitMinutes + " min. Marks count in the report card. Revise your weak topics first!",
       meta: { courseId: course._id, quizId: quiz._id },
     });
+
+    await alertClassTeacher(req.user.organizationId, course._id, req.user.userId, "made a revision test: " + name + when);
 
     res.status(201).json({
       message: "Revision test created with " + picked.length + " questions 📝",
