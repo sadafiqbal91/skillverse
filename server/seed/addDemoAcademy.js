@@ -27,7 +27,7 @@ const Note = load("Note");
 const ChatMessage = load("ChatMessage");
 const SchoolClass = load("SchoolClass");
 const ALL = [User, Course, Module, Lesson, Enrollment, Quiz, Question, Attempt, Assignment, Submission, Intervention, Note, ChatMessage,
-  load("Notification"), load("MyNote"), load("SchoolClass")].filter(Boolean);
+  load("Notification"), load("MyNote"), load("SchoolClass"), load("Reminder")].filter(Boolean);
 
 const SLUG = "demo";
 const PASS = "demo123";
@@ -98,6 +98,26 @@ const BANK = {
     ["'کراچی' کیا ہے؟", ["جگہ کا نام", "کوئی کام", "رنگ"], 0],
     ["ان میں اسم کون سا ہے؟", ["کتاب", "دوڑنا", "جلدی"], 0],
   ]),
+  Nouns: Q("Nouns", [
+    ["A noun is the name of a...", ["Person, place or thing", "Action", "Colour"], 0],
+    ["Which word is a noun?", ["Book", "Run", "Quickly"], 0],
+    ["In 'Ali goes to school', which words are nouns?", ["Ali and school", "goes and to", "to and school"], 0],
+  ]),
+  Verbs: Q("Verbs", [
+    ["A verb is a...", ["Doing word", "Naming word", "Number"], 0],
+    ["Which word is a verb?", ["Jump", "Chair", "Green"], 0],
+    ["In 'Sara reads a book', the verb is...", ["reads", "Sara", "book"], 0],
+  ]),
+  "Pillars of Islam": Q("Pillars of Islam", [
+    ["How many pillars of Islam are there?", ["5", "3", "7"], 0],
+    ["Fasting in Ramadan is called...", ["Sawm", "Hajj", "Zakat"], 0],
+    ["Giving a part of wealth to the poor is called...", ["Zakat", "Salah", "Sawm"], 0],
+  ]),
+  Provinces: Q("Provinces", [
+    ["How many provinces does Pakistan have?", ["4", "5", "6"], 0],
+    ["What is the capital of Pakistan?", ["Islamabad", "Karachi", "Lahore"], 0],
+    ["Karachi is in which province?", ["Sindh", "Punjab", "Balochistan"], 0],
+  ]),
   HTML: Q("HTML", [
     ["HTML is used to build...", ["Web pages", "Cars", "Cakes"], 0],
     ["Which tag makes a big heading?", ["<h1>", "<p>", "<end>"], 0],
@@ -154,6 +174,42 @@ const COURSES = [
       ] },
     ],
     quiz: { title: "اردو کوئز 1", topics: ["حروفِ تہجی", "اسم"] },
+  },
+  {
+    key: "english", teacher: "sana", title: "English: Class 5", description: "Nouns and verbs ✏️",
+    chapters: [
+      { title: "Naming and Doing Words", status: "this_week", term: 1, lessons: [
+        L("Nouns", "Nouns", "A noun is the name of a person, place or thing.\n\nAli (person), Karachi (place) and book (thing) are all nouns.",
+          ["Noun = naming word", "Person: Ali", "Place: Karachi", "Thing: book"], "In 'Sara drinks milk', Sara and milk are nouns.",
+          [{ question: "Is 'chair' a noun?", answer: "Yes, it is the name of a thing" }]),
+        L("Verbs", "Verbs", "A verb is a doing word. It tells us what someone does.\n\nRun, eat, read and write are verbs.",
+          ["Verb = doing word", "run, eat, read, write"], "In 'Omar plays cricket', plays is the verb. 🏏",
+          [{ question: "Find the verb: 'The bird sings.'", answer: "sings" }]),
+      ] },
+    ],
+    quiz: { title: "English Quiz 1", topics: ["Nouns", "Verbs"] },
+  },
+  {
+    key: "islamiat", teacher: "usman", title: "Islamiat: Class 5", description: "Pillars of Islam 🕌",
+    chapters: [
+      { title: "Arkan-e-Islam", status: "covered", term: 1, lessons: [
+        L("Five Pillars of Islam", "Pillars of Islam", "Islam has five pillars: Shahadah (faith), Salah (prayer), Zakat (charity), Sawm (fasting in Ramadan) and Hajj (pilgrimage to Makkah).",
+          ["Shahadah: faith", "Salah: prayer five times a day", "Zakat: helping the poor", "Sawm: fasting in Ramadan", "Hajj: visiting Makkah"], "We fast in Ramadan. This is Sawm.",
+          [{ question: "How many pillars of Islam are there?", answer: "5" }]),
+      ] },
+    ],
+    quiz: { title: "Islamiat Quiz 1", topics: ["Pillars of Islam"] },
+  },
+  {
+    key: "social", teacher: "sana", title: "Social Studies: Class 5", description: "Our country Pakistan 🇵🇰",
+    chapters: [
+      { title: "Our Pakistan", status: "upcoming", term: 1, lessons: [
+        L("Provinces of Pakistan", "Provinces", "Pakistan has four provinces: Punjab, Sindh, Khyber Pakhtunkhwa and Balochistan. Islamabad is the capital.",
+          ["4 provinces", "Capital: Islamabad", "Karachi is in Sindh"], "Lahore is the capital of Punjab.",
+          [{ question: "What is the capital of Pakistan?", answer: "Islamabad" }]),
+      ] },
+    ],
+    quiz: { title: "Social Studies Quiz 1", topics: ["Provinces"] },
   },
   {
     key: "computer", teacher: "bilal", title: "Computer: Class 5", description: "Your first web page 💻",
@@ -228,7 +284,8 @@ const takeRetest = async (org, student, course, topic, pass) => {
     const mk = (name, email, role, children = []) => User.create({ organizationId: org._id, name, email, password: PASS, role, children });
 
     await mk("Mrs. Ayesha", "principal@demo.com", "orgadmin");
-    const teachers = { bilal: await mk("Mr. Bilal", "teacher@demo.com", "instructor"), hina: await mk("Miss Hina", "science@demo.com", "instructor") };
+    const teachers = { bilal: await mk("Mr. Bilal", "teacher@demo.com", "instructor"), hina: await mk("Miss Hina", "science@demo.com", "instructor"),
+      sana: await mk("Miss Sana", "english@demo.com", "instructor"), usman: await mk("Mr. Usman", "islamiat@demo.com", "instructor") };
     const ali = await mk("Ali Khan", "student@demo.com", "student");
     const sara = await mk("Sara Ahmed", "sara@demo.com", "student");
     const omar = await mk("Omar Shah", "omar@demo.com", "student");
@@ -268,7 +325,7 @@ const takeRetest = async (org, student, course, topic, pass) => {
     }
 
     // 🎭 Kahaniyan
-    const { maths, science, computer, urdu } = made;
+    const { maths, science, computer, urdu, english, islamiat, social } = made;
     await takeQuiz(org, maths.quiz, sara, { Fractions: 3, Decimals: 3 }, 5);          // ⭐ top student
     await takeQuiz(org, science.quiz, sara, { Plants: 3, "Water Cycle": 3 }, 4);
     await takeQuiz(org, maths.quiz, ali, { Fractions: 0, Decimals: 2 }, 6);           // 🔴 weak → re-test failed → notes needed
@@ -280,6 +337,14 @@ const takeRetest = async (org, student, course, topic, pass) => {
     await takeQuiz(org, computer.quiz, fatima, { HTML: 3 }, 1);
     await takeQuiz(org, urdu.quiz, sara, { "حروفِ تہجی": 3, "اسم": 3 }, 2);         // 📖 Urdu
     await takeQuiz(org, urdu.quiz, ali, { "حروفِ تہجی": 3, "اسم": 2 }, 1);
+    await takeQuiz(org, english.quiz, sara, { Nouns: 3, Verbs: 3 }, 3);              // ✏️ English
+    await takeQuiz(org, english.quiz, omar, { Nouns: 3, Verbs: 2 }, 3);
+    await takeQuiz(org, islamiat.quiz, ali, { "Pillars of Islam": 3 }, 4);          // 🕌 Islamiat
+    await takeQuiz(org, islamiat.quiz, sara, { "Pillars of Islam": 3 }, 4);
+    // Purane quiz (pichle hafte) taake planner mein inki baari ⏳ dikhe
+    for (const q of [english.quiz, islamiat.quiz, social.quiz, computer.quiz, urdu.quiz]) {
+      await Quiz.updateOne({ _id: q._id }, { $set: { createdAt: ago(9) } }, { timestamps: false, strict: false });
+    }
 
     // ⚖️ Planner ki kahani: Science ka quiz 10 din purana → is hafte Miss Hina ka quiz ⏳ baaki
     await Quiz.updateOne({ _id: science.quiz._id }, { $set: { createdAt: ago(10) } }, { timestamps: false, strict: false });
@@ -306,6 +371,18 @@ const takeRetest = async (org, student, course, topic, pass) => {
       description: "اپنے گھر کی پانچ چیزوں کے نام لکھیں۔ مثال: کرسی، کتاب",
       topic: "اسم", dueDate: ahead(6), maxMarks: 10,
     });
+    await Assignment.create({
+      organizationId: org._id, courseId: english.course._id, title: "Find 5 Nouns",
+      description: "Look around your home. Write 5 nouns (names of things) and make one sentence with each.", topic: "Nouns", dueDate: ahead(7), maxMarks: 10,
+    });
+    await Assignment.create({
+      organizationId: org._id, courseId: islamiat.course._id, title: "My Salah Chart",
+      description: "Make a chart of the 5 daily prayers and their times.", topic: "Pillars of Islam", dueDate: ahead(8), maxMarks: 10,
+    });
+    await Assignment.create({
+      organizationId: org._id, courseId: social.course._id, title: "Map of Pakistan",
+      description: "Draw the map of Pakistan and colour the 4 provinces. Mark Islamabad with a star.", topic: "Provinces", dueDate: ahead(9), maxMarks: 10,
+    });
 
     // 💬 Chat: ek sawal jo teacher ke review ka intezar kar raha hai
     if (ChatMessage) {
@@ -318,8 +395,9 @@ const takeRetest = async (org, student, course, topic, pass) => {
     // 🌳 School Tree: Class 5-A, class teacher, subjects, timetable
     if (SchoolClass) {
       const M = maths.course._id, S = science.course._id, C = computer.course._id, U = urdu.course._id;
+      const E = english.course._id, I = islamiat.course._id, SS = social.course._id;
       await SchoolClass.create({
-        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.bilal._id, courseIds: [M, S, C, U], testsPerWeek: 2,
+        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.bilal._id, courseIds: [M, S, C, U, E, I, SS], testsPerWeek: 2,
         timetable: [
           { day: "Mon", time: "08:30", courseId: M }, { day: "Mon", time: "09:30", courseId: S },
           { day: "Tue", time: "08:30", courseId: C }, { day: "Tue", time: "09:30", courseId: M },
@@ -327,6 +405,9 @@ const takeRetest = async (org, student, course, topic, pass) => {
           { day: "Thu", time: "08:30", courseId: M }, { day: "Thu", time: "09:30", courseId: C },
           { day: "Fri", time: "08:30", courseId: S }, { day: "Mon", time: "10:30", courseId: U },
           { day: "Wed", time: "10:30", courseId: U }, { day: "Fri", time: "09:30", courseId: U },
+          { day: "Mon", time: "11:30", courseId: E }, { day: "Tue", time: "10:30", courseId: E }, { day: "Thu", time: "10:30", courseId: E },
+          { day: "Tue", time: "11:30", courseId: I }, { day: "Fri", time: "10:30", courseId: I },
+          { day: "Wed", time: "11:30", courseId: SS }, { day: "Thu", time: "11:30", courseId: SS },
         ],
       });
     }
@@ -336,6 +417,8 @@ const takeRetest = async (org, student, course, topic, pass) => {
       { Role: "Principal", Email: "principal@demo.com" },
       { Role: "Teacher (Maths + Computer, class teacher 5-A)", Email: "teacher@demo.com" },
       { Role: "Teacher (Science + Urdu)", Email: "science@demo.com" },
+      { Role: "Teacher (English + Social Studies)", Email: "english@demo.com" },
+      { Role: "Teacher (Islamiat)", Email: "islamiat@demo.com" },
       { Role: "Student (weak in Fractions)", Email: "student@demo.com" },
       { Role: "Student (top)", Email: "sara@demo.com" },
       { Role: "Student (re-test ready)", Email: "omar@demo.com" },

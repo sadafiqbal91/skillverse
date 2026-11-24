@@ -101,7 +101,7 @@ const buildTree = async (org, classFilter = {}) => {
       Enrollment.aggregate([{ $match: { courseId: { $in: ids } } }, { $group: { _id: "$courseId", n: { $sum: 1 } } }]),
       Intervention.aggregate([{ $match: { courseId: { $in: ids }, level: { $in: ACTIVE } } }, { $group: { _id: "$courseId", n: { $sum: 1 } } }]),
       Assignment.find({ courseId: { $in: ids } }).select("title courseId createdAt").sort("-createdAt").limit(60),
-      Quiz.find({ courseId: { $in: ids }, kind: { $ne: "retest" } }).select("title courseId kind createdAt testDate").sort("-createdAt").limit(60),
+      Quiz.find({ courseId: { $in: ids }, kind: { $ne: "retest" } }).select("title courseId kind createdAt updatedAt testDate").sort("-createdAt").limit(60),
       Note.find({ courseId: { $in: ids } }).select("title courseId createdBy createdAt").populate("createdBy", "name").sort("-createdAt").limit(60),
       Module.find({ courseId: { $in: ids }, status: "this_week" }).select("title courseId order").sort("order"),
     ]);
@@ -131,6 +131,9 @@ const buildTree = async (org, classFilter = {}) => {
     const updates = [
       ...asg.map((a) => ({ icon: "📝", text: teacherOf(a.courseId) + " gave homework: " + a.title, courseId: a.courseId, at: a.createdAt })),
       ...quizzes.map((q) => ({ icon: q.kind === "revision" ? "📋" : "🧠", text: teacherOf(q.courseId) + (q.kind === "revision" ? " made a revision test: " : " made a quiz: ") + q.title, courseId: q.courseId, at: q.createdAt })),
+      // 📅 Purane quiz par nayi test date lagi → wo bhi "Latest" mein
+      ...quizzes.filter((q) => q.testDate && q.updatedAt && new Date(q.updatedAt) - new Date(q.createdAt) > 60 * 1000)
+        .map((q) => ({ icon: "📅", text: teacherOf(q.courseId) + " set a test date: " + q.title + " (" + new Date(q.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ")", courseId: q.courseId, at: q.updatedAt })),
       ...notes.map((n) => ({ icon: "📄", text: (n.createdBy?.name || teacherOf(n.courseId)) + " sent notes: " + n.title, courseId: n.courseId, at: n.createdAt })),
     ];
 

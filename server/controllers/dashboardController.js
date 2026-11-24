@@ -8,11 +8,13 @@ const Submission = require("../models/Submission");
 const Note = require("../models/Note");
 const Organization = require("../models/Organization");
 const SchoolClass = require("../models/SchoolClass");
+const Reminder = require("../models/Reminder");
 const { buildProgress } = require("./progressController");
 const { buildEarlyWarnings } = require("../services/earlyWarningService");
 const { notify, parentsOf } = require("../services/interventionService");
 
 const DAY = 24 * 60 * 60 * 1000;
+const today = () => new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString().slice(0, 10); // 🇵🇰 Pakistan ka din
 const ACTIVE = ["needs_practice", "intervention", "one_on_one"];
 
 // GET /api/dashboard/instructor → 👨‍🏫 teacher's control room
@@ -190,7 +192,11 @@ const earlyWarning = async (req, res) => {
   try {
     if (!["instructor", "orgadmin"].includes(req.user.role)) return res.status(403).json({ message: "Only teachers and principals can see this" });
     const opts = req.user.role === "instructor" ? { instructorId: req.user.userId } : {};
-    const students = await buildEarlyWarnings(req.user.organizationId, opts);
+    const list = await buildEarlyWarnings(req.user.organizationId, opts);
+    // ✅ Aaj reminder ja chuka hai? (page dobara khule to bhi button "Reminder sent" dikhaye)
+    const done = await Reminder.find({ organizationId: req.user.organizationId, day: today() }).select("studentId courseId");
+    const sent = new Set(done.map((r) => r.studentId + ":" + r.courseId));
+    const students = list.map((x) => ({ ...x, remindedToday: sent.has(x.studentId + ":" + x.courseId) }));
     res.json({ count: students.length, students });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -208,6 +214,14 @@ const remindEarly = async (req, res) => {
     if (!course) return res.status(404).json({ message: "Course not found" });
     const enrolled = await Enrollment.exists({ courseId: course._id, studentId });
     if (!enrolled) return res.status(404).json({ message: "Student is not in this course" });
+
+    // 🔁 Button do baar dabe ya teacher + principal dono bhejein: din mein sirf EK reminder
+    try {
+      await Reminder.create({ organizationId: req.user.organizationId, studentId, courseId: course._id, day: today(), sentBy: req.user.userId });
+    } catch (e) {
+      if (e.code === 11000) return res.status(409).json({ message: "A reminder was already sent today ✅", already: true });
+      throw e;
+    }
 
     const student = await User.findById(studentId).select("name");
     const first = (student?.name || "").split(" ")[0] || "there";

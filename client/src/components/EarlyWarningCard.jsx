@@ -20,17 +20,22 @@ export default function EarlyWarningCard({ admin = false, className = "" }) {
   const [busy, setBusy] = useState("");
 
   useEffect(() => {
-    api.get("/dashboard/early-warning").then((r) => setList(r.data.students)).catch((e) => setError(errMsg(e)));
+    api.get("/dashboard/early-warning").then((r) => {
+      setList(r.data.students);
+      setSent(Object.fromEntries(r.data.students.filter((s) => s.remindedToday).map((s) => [s.studentId + ":" + s.courseId, true])));
+    }).catch((e) => setError(errMsg(e)));
   }, []);
 
   const remind = async (s) => {
     const k = s.studentId + ":" + s.courseId;
+    if (busy || sent[k]) return; // 🔁 do baar click = ek hi reminder
     setBusy(k);
     try {
       await api.post("/dashboard/early-warning/remind", { studentId: s.studentId, courseId: s.courseId });
       setSent((m) => ({ ...m, [k]: true }));
     } catch (e) {
-      setError(errMsg(e));
+      if (e.response?.data?.already) setSent((m) => ({ ...m, [k]: true }));
+      else setError(errMsg(e));
     } finally {
       setBusy("");
     }

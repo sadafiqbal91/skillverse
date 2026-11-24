@@ -82,6 +82,8 @@ const updateQuiz = async (req, res) => {
     if (newDate && newDate !== oldDate) {
       const course = await Course.findById(quiz.courseId).select("title");
       await announceTest(quiz, course, req.user.organizationId);
+      await alertClassTeacher(req.user.organizationId, quiz.courseId, req.user.userId,
+        "set a test date: " + quiz.title + " (" + new Date(quiz.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ")");
       announced = true;
     }
     res.json({ message: announced ? "Saved ✅ Students and parents were notified 📅" : "Saved ✅", quiz });
