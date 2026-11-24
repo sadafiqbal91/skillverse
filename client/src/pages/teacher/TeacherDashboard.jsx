@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Brain, LifeBuoy, ClipboardCheck, AlertTriangle, BarChart3, Sprout, UserRound, ArrowRight, Plus, BookOpen } from "lucide-react";
+import { Users, Brain, LifeBuoy, ClipboardCheck, AlertTriangle, BarChart3, Sprout, UserRound, ArrowRight, Plus, BookOpen, Scale } from "lucide-react";
 import api, { errMsg } from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
 import { Card, StatCard, Badge, Empty, Loading, ErrorBox, ProgressBar } from "../../components/ui";
@@ -21,6 +21,40 @@ function PipelineBox({ icon: Icon, count, label, hint, cls }) {
       <p className="mt-2 text-sm font-medium">{label}</p>
       <p className="text-xs text-gray-500">{hint}</p>
     </div>
+  );
+}
+
+// ⚖️ "Is hafte aap ki baari": Assessment Planner se
+function TurnsCard() {
+  const [turns, setTurns] = useState(null);
+  useEffect(() => {
+    api.get("/classes/turns").then((r) => setTurns(r.data.turns)).catch(() => setTurns([]));
+  }, []);
+  if (!turns?.length) return null;
+  const left = turns.filter((t) => !t.done).length;
+  return (
+    <Card title="Your turn this week" icon={Scale}
+      action={<span className={"text-xs font-semibold " + (left ? "text-sky-300" : "text-emerald-300")}>{left ? "⏳ " + left + " to do" : "✅ All done, thank you!"}</span>}>
+      <ul className="space-y-2">
+        {turns.map((t) => (
+          <li key={t.className + t.courseId} className={"rounded-xl border px-4 py-3 " + (t.done ? "border-emerald-500/20 bg-emerald-500/[0.05]" : "border-white/[0.06] bg-black/20")}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-lg">{t.done ? "✅" : "⚖️"}</span>
+              <span className="flex-1">
+                <span className="block font-medium">{t.className} · {t.title}</span>
+                <span className="text-xs text-gray-500">Week {t.week} of {t.rounds}{t.topics.length ? " · 📚 Test together: " + t.topics.join(", ") : ""}</span>
+              </span>
+              {t.quiz ? <Badge className="bg-emerald-500/15 text-emerald-300">✅ 🧠 Quiz</Badge> : (
+                <Link to={"/teacher/courses/" + t.courseId} className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold hover:bg-violet-500">🧠 Make quiz</Link>
+              )}
+              {t.homework ? <Badge className="bg-emerald-500/15 text-emerald-300">✅ 📝 Homework</Badge> : (
+                <Link to="/teacher/grading" className="rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-semibold hover:bg-cyan-500">📝 Give homework</Link>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 
@@ -77,6 +111,9 @@ export default function TeacherDashboard() {
         <StatCard icon={LifeBuoy} value={needHelp} label="Students needing help" tone="rose" />
         <StatCard icon={ClipboardCheck} value={pending} label="Waiting for grading" tone="amber" />
       </div>
+
+      {/* ⚖️ Is hafte meri baari */}
+      <TurnsCard />
 
       {/* 🔮 Fail hone se pehle pakro */}
       <EarlyWarningCard />

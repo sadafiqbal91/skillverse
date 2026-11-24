@@ -281,6 +281,9 @@ const takeRetest = async (org, student, course, topic, pass) => {
     await takeQuiz(org, urdu.quiz, sara, { "حروفِ تہجی": 3, "اسم": 3 }, 2);         // 📖 Urdu
     await takeQuiz(org, urdu.quiz, ali, { "حروفِ تہجی": 3, "اسم": 2 }, 1);
 
+    // ⚖️ Planner ki kahani: Science ka quiz 10 din purana → is hafte Miss Hina ka quiz ⏳ baaki
+    await Quiz.updateOne({ _id: science.quiz._id }, { $set: { createdAt: ago(10) } }, { timestamps: false, strict: false });
+
     // 📝 Assignment with picture
     const pizza = await Assignment.create({
       organizationId: org._id, courseId: maths.course._id, title: "Colour 1/4 of a Pizza",
@@ -316,7 +319,7 @@ const takeRetest = async (org, student, course, topic, pass) => {
     if (SchoolClass) {
       const M = maths.course._id, S = science.course._id, C = computer.course._id, U = urdu.course._id;
       await SchoolClass.create({
-        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.bilal._id, courseIds: [M, S, C, U],
+        organizationId: org._id, name: "Class 5-A", classTeacherId: teachers.bilal._id, courseIds: [M, S, C, U], testsPerWeek: 2,
         timetable: [
           { day: "Mon", time: "08:30", courseId: M }, { day: "Mon", time: "09:30", courseId: S },
           { day: "Tue", time: "08:30", courseId: C }, { day: "Tue", time: "09:30", courseId: M },

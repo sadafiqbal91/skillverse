@@ -13,6 +13,7 @@ export const WORDS = {
   online_academy: { group: "Batch", groups: "batches", lead: "Batch coordinator", item: "Course", title: "Batches", eg: "Evening Batch" },
 };
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const dm = (d) => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 const input = "w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-violet-500";
 const ago = (d) => {
   const m = Math.floor((Date.now() - new Date(d)) / 60000);
@@ -25,6 +26,7 @@ function ClassForm({ w, data, initial, onClose, onSaved }) {
   const [name, setName] = useState(initial?.name || "");
   const [lead, setLead] = useState(initial?.classTeacher?._id || "");
   const [picked, setPicked] = useState(new Set((initial?.courseIds || []).map(String)));
+  const [perWeek, setPerWeek] = useState(initial?.testsPerWeek || 2);
   const [rows, setRows] = useState(initial?.timetable?.map((t) => ({ day: t.day, time: t.time, courseId: String(t.courseId) })) || []);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -41,7 +43,7 @@ function ClassForm({ w, data, initial, onClose, onSaved }) {
     setSaving(true);
     setErr("");
     const body = {
-      name, classTeacherId: lead || null, courseIds: [...picked],
+      name, classTeacherId: lead || null, courseIds: [...picked], testsPerWeek: Number(perWeek) || 2,
       timetable: rows.filter((r) => r.courseId && picked.has(r.courseId) && r.time),
     };
     try {
@@ -89,6 +91,13 @@ function ClassForm({ w, data, initial, onClose, onSaved }) {
         </div>
       </div>
 
+      <label className="block text-sm text-gray-400">⚖️ {w.item}s tested each week (quiz + homework, in turns)
+        <input type="number" min="1" max="10" className={input + " mt-1 md:w-32"} value={perWeek} onChange={(e) => setPerWeek(e.target.value)} />
+        <span className="mt-1 block text-xs text-gray-500">
+          {subjects.length ? "With " + subjects.length + " " + w.item.toLowerCase() + "s, every " + w.item.toLowerCase() + " gets its turn every " + Math.ceil(subjects.length / Math.min(Number(perWeek) || 2, subjects.length)) + " week(s), then it starts again." : "Pick " + w.item.toLowerCase() + "s above."}
+        </span>
+      </label>
+
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm text-gray-400">🗓️ Timetable</p>
@@ -124,8 +133,9 @@ function ClassForm({ w, data, initial, onClose, onSaved }) {
 }
 
 export function ClassCard({ k, w, onEdit, onDelete, readOnly = false, defaultOpen = true }) {
-  const [tab, setTab] = useState("subjects");
+  const [tab, setTab] = useState(k.plan?.thisWeek?.length ? "plan" : "subjects");
   const [open, setOpen] = useState(defaultOpen);
+  const plan = k.plan;
   const byDay = DAYS.map((d) => [d, k.timetable.filter((t) => t.day === d)]).filter(([, list]) => list.length);
 
   return (
@@ -142,6 +152,11 @@ export function ClassCard({ k, w, onEdit, onDelete, readOnly = false, defaultOpe
             {k.totals.warnings > 0 && <span className="rounded-full bg-orange-500/15 px-2.5 py-1 text-orange-300">🔮 {k.totals.warnings} early warning</span>}
             {k.totals.needHelp > 0 && <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-rose-300">🙋 {k.totals.needHelp} need help</span>}
             {k.totals.quietThisWeek > 0 && <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-300">⚠️ {k.totals.quietThisWeek} with no work this week</span>}
+            {k.totals.planTotal > 0 && (
+              <span className={"rounded-full px-2.5 py-1 " + (k.totals.planDone === k.totals.planTotal ? "bg-emerald-500/15 text-emerald-300" : "bg-sky-500/15 text-sky-300")}>
+                ⚖️ Plan: {k.totals.planDone}/{k.totals.planTotal} done
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -158,7 +173,7 @@ export function ClassCard({ k, w, onEdit, onDelete, readOnly = false, defaultOpe
       {open && <>
 
       <div className="flex gap-1 border-b border-white/10 px-4 pt-3 text-sm">
-        {[["subjects", w.item + "s"], ["timetable", "🗓️ Timetable"], ["updates", "🕒 Latest"]].map(([key, label]) => (
+        {[["plan", "⚖️ Plan"], ["subjects", w.item + "s"], ["timetable", "🗓️ Timetable"], ["updates", "🕒 Latest"]].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             className={"rounded-t-lg px-3 py-2 font-medium transition " + (tab === key ? "bg-white/10 text-white" : "text-gray-400 hover:text-white")}>
             {label}
@@ -167,6 +182,54 @@ export function ClassCard({ k, w, onEdit, onDelete, readOnly = false, defaultOpe
       </div>
 
       <div className="p-4">
+        {tab === "plan" && (
+          !plan?.thisWeek?.length ? <p className="text-sm text-gray-500">No plan yet. Add {w.item.toLowerCase()}s to this {w.group.toLowerCase()} first.</p> : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-gray-300">
+                  <b>Week {plan.week} of {plan.rounds}</b>
+                  <span className="text-gray-500"> · {dm(plan.from)} to {dm(plan.to)} · {plan.perWeek} {w.item.toLowerCase()}{plan.perWeek > 1 ? "s" : ""} get a quiz + homework this week</span>
+                </p>
+                <span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (plan.done === plan.thisWeek.length ? "bg-emerald-500/15 text-emerald-300" : "bg-sky-500/15 text-sky-300")}>
+                  {plan.done === plan.thisWeek.length ? "✅ Plan followed" : "⏳ " + plan.done + " of " + plan.thisWeek.length + " done"}
+                </span>
+              </div>
+
+              <ul className="space-y-2">
+                {plan.thisWeek.map((p) => (
+                  <li key={p.courseId} className={"rounded-xl border px-4 py-3 " + (p.done ? "border-emerald-500/20 bg-emerald-500/[0.05]" : "border-white/[0.06] bg-black/20")}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg">{p.done ? "✅" : "⏳"}</span>
+                      <span className="flex-1">
+                        <span className="block font-medium">{p.title}</span>
+                        <span className="text-xs text-gray-500">👩‍🏫 {p.teacher}</span>
+                      </span>
+                      <span className={"rounded-full px-2 py-0.5 text-xs " + (p.quiz ? "bg-emerald-500/15 text-emerald-300" : "bg-white/5 text-gray-400")}>{p.quiz ? "✅" : "⏳"} 🧠 Quiz</span>
+                      <span className={"rounded-full px-2 py-0.5 text-xs " + (p.homework ? "bg-emerald-500/15 text-emerald-300" : "bg-white/5 text-gray-400")}>{p.homework ? "✅" : "⏳"} 📝 Homework</span>
+                    </div>
+                    {p.topics.length > 0 && <p className="mt-1.5 pl-8 text-xs text-gray-400">📚 Test together: {p.topics.join(", ")}</p>}
+                  </li>
+                ))}
+              </ul>
+
+              {plan.rounds > 1 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">🔁 Turns</p>
+                  <div className="flex flex-wrap gap-2">
+                    {plan.cycle.map((list, i) => (
+                      <div key={i} className={"rounded-xl px-3 py-2 text-xs " + (i + 1 === plan.week ? "border border-violet-500/50 bg-violet-500/15 text-white" : "bg-black/20 text-gray-400")}>
+                        <span className="font-semibold">Week {i + 1}{i + 1 === plan.week ? " · now" : (i === plan.week % plan.rounds ? " · next" : "")}</span>
+                        <span className="block">{list.join(" + ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">When every {w.item.toLowerCase()} has had its turn, it starts again from Week 1.</p>
+                </div>
+              )}
+            </div>
+          )
+        )}
+
         {tab === "subjects" && (
           !k.subjects.length ? <p className="text-sm text-gray-500">No {w.item.toLowerCase()}s yet. Press Edit to add them.</p> : (
             <ul className="space-y-2">
@@ -274,7 +337,9 @@ export default function SchoolTreePage() {
     warnings: a.warnings + (k.totals.warnings || 0),
     needHelp: a.needHelp + (k.totals.needHelp || 0),
     quietClasses: a.quietClasses + (k.totals.quietThisWeek ? 1 : 0),
-  }), { students: 0, quiet: 0, warnings: 0, needHelp: 0, quietClasses: 0 });
+    planDone: a.planDone + (k.totals.planDone || 0),
+    planTotal: a.planTotal + (k.totals.planTotal || 0),
+  }), { students: 0, quiet: 0, warnings: 0, needHelp: 0, quietClasses: 0, planDone: 0, planTotal: 0 });
 
   return (
     <div className="space-y-6">
@@ -310,13 +375,14 @@ export default function SchoolTreePage() {
       {data.classes.length > 0 && (
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <p className="mb-3 text-sm font-semibold">📋 This week at a glance</p>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             {[
               ["📚", data.classes.length, w.groups, "text-white"],
               ["🧒", sum.students, "students", "text-white"],
               ["⚠️", sum.quiet, w.item.toLowerCase() + "s with no work" + (sum.quietClasses ? " (in " + sum.quietClasses + " " + (sum.quietClasses > 1 ? w.groups : w.group.toLowerCase()) + ")" : ""), sum.quiet ? "text-amber-300" : "text-emerald-300"],
               ["🔮", sum.warnings, "early warnings", sum.warnings ? "text-orange-300" : "text-emerald-300"],
               ["🙋", sum.needHelp, "need help", sum.needHelp ? "text-rose-300" : "text-emerald-300"],
+              ["⚖️", sum.planDone + "/" + sum.planTotal, "plan followed (quiz + homework)", sum.planDone === sum.planTotal ? "text-emerald-300" : "text-sky-300"],
             ].map(([icon, n, label, color]) => (
               <div key={label} className="rounded-xl bg-black/20 px-3 py-2.5">
                 <p className={"text-xl font-bold " + color}>{icon} {n}</p>
