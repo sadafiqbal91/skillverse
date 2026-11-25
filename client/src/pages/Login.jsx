@@ -129,23 +129,31 @@ export default function Login() {
     setError("");
     setPicked(null);
     setPrivateRole({ label: acc.label, school: group.school });
-    setDemoOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => document.querySelector('input[name="email"]')?.focus(), 50);
   };
 
-  // 👤 Ek shakhs ka button: naam + wo kaun hai
-  const PersonBtn = ({ p }) => {
-    const active = picked?.email === p.email;
-    return (
-      <button type="button" onClick={() => pickDemo({ ...p, slug: "demo", password: "demo123" })}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs transition ${
-          active ? "border-violet-500 bg-violet-500/15 text-white" : "border-white/10 bg-white/[0.03] text-gray-300 hover:bg-white/10 hover:text-white"
-        }`}>
-        <span className="font-semibold">{p.who}</span>
-        <span className="text-right text-[11px] text-gray-400">{p.note}</span>
-      </button>
-    );
+  // 👤 Ek tap = seedha andar (sirf demo ke liye)
+  const [entering, setEntering] = useState("");
+  const enterAs = async (p) => {
+    setError("");
+    setEntering(p.email);
+    try {
+      const { user } = await login("demo", p.email, "demo123");
+      navigate(homeFor(user.role), { replace: true });
+    } catch (err) {
+      setError(errMsg(err));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } finally {
+      setEntering("");
+    }
   };
+  const PersonBtn = ({ p }) => (
+    <button type="button" disabled={!!entering} onClick={() => enterAs(p)}
+      className="flex w-full flex-col items-start rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left transition hover:border-violet-500/60 hover:bg-violet-500/10 disabled:opacity-60">
+      <span className="text-sm font-semibold text-white">{entering === p.email ? "Opening..." : p.who}</span>
+      <span className="text-[11px] leading-snug text-gray-400">{p.note}</span>
+    </button>
+  );
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -180,6 +188,59 @@ export default function Login() {
           </h1>
           <p className="text-gray-400 mt-1">Learn • Practice • Grow</p>
         </Link>
+
+        {/* 🎭 /login/demo (QR): pehle "kaun banna hai?", phir form */}
+        {isDemoLink && (
+          <div className="mb-5 rounded-2xl border border-violet-500/25 bg-white/[0.03] p-4 shadow-xl shadow-black/30">
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-black/30 p-1">
+              {DEMO.map(({ id, school, icon: Icon }) => (
+                <button key={id} type="button" onClick={() => { setTab(id); setPicked(null); setPrivateRole(null); }}
+                  className={`flex items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[11px] font-medium transition sm:text-xs ${
+                    tab === id ? "bg-violet-600 text-white shadow" : "text-gray-400 hover:text-white"
+                  }`}>
+                  <Icon size={14} /> {school}
+                </button>
+              ))}
+            </div>
+
+            {!group.private ? (
+              <>
+                <p className="mt-3 text-center text-sm font-semibold">🎭 Meet Ali's school. Who do you want to be?</p>
+                <p className="text-center text-[11px] text-gray-400">One tap and you are in. No password needed.</p>
+                <div className="mt-3 space-y-3">
+                  {group.story.map((g) => (
+                    <div key={g.title}>
+                      <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-gray-500">{g.title}</p>
+                      <div className={g.list.length > 1 ? "grid grid-cols-2 gap-1.5" : ""}>
+                        {g.list.map((p) => <PersonBtn key={p.email} p={p} />)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-3 text-center text-[12px] text-amber-200">🔒 {group.school} is a private institute. Pick a role, then type your own email and password below.</p>
+                <div className="mt-2.5 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${group.accounts.length}, minmax(0, 1fr))` }}>
+                  {group.accounts.map((acc) => {
+                    const Icon = acc.icon;
+                    return (
+                      <button key={acc.label} type="button" onClick={() => pickPrivate(acc)}
+                        className="flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-1 py-2 text-xs text-gray-300 transition hover:bg-white/10 hover:text-white">
+                        <Icon size={16} className="text-violet-300" />
+                        {acc.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {isDemoLink && tab === "demo" && (
+          <p className="mb-2 text-center text-xs text-gray-500">Have your own account? Sign in here 👇</p>
+        )}
 
         <form
           onSubmit={onSubmit}
@@ -244,64 +305,6 @@ export default function Login() {
           </p>
         )}
 
-        {/* Demo: tabs per institute + ek line roles */}
-        {isDemoLink && (
-        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02]">
-          <button type="button" onClick={() => setDemoOpen((v) => !v)}
-            className="flex w-full items-center justify-between px-4 py-3 text-sm text-gray-400 hover:text-white transition">
-            <span>Try a demo account</span>
-            <ChevronDown size={16} className={`transition-transform ${demoOpen ? "rotate-180" : ""}`} />
-          </button>
-
-          {demoOpen && (
-            <div className="border-t border-white/10 p-3 page-enter">
-              {/* Institute tabs */}
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-black/30 p-1">
-                {DEMO.map(({ id, school, icon: Icon }) => (
-                  <button key={id} type="button" onClick={() => { setTab(id); setPicked(null); setPrivateRole(null); }}
-                    className={`flex items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[11px] font-medium transition sm:text-xs ${
-                      tab === id ? "bg-violet-600 text-white shadow" : "text-gray-400 hover:text-white"
-                    }`}>
-                    <Icon size={14} /> {school}
-                  </button>
-                ))}
-              </div>
-
-              {!group.private ? (
-                <>
-                  <p className="mt-2 text-center text-[11px] text-cyan-300">🎭 Meet Ali and everyone around him · tap a person, then Sign in · password <b>demo123</b></p>
-                  <div className="mt-2.5 space-y-2.5">
-                    {group.story.map((g) => (
-                      <div key={g.title}>
-                        <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wider text-gray-500">{g.title}</p>
-                        <div className="space-y-1">
-                          {g.list.map((p) => <PersonBtn key={p.email} p={p} />)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="mt-2 text-center text-[11px] text-amber-200">🔒 Private institute · pick a role, then type your own email and password</p>
-                  <div className="mt-2.5 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${group.accounts.length}, minmax(0, 1fr))` }}>
-                    {group.accounts.map((acc) => {
-                      const Icon = acc.icon;
-                      return (
-                        <button key={acc.label} type="button" onClick={() => pickPrivate(acc)}
-                          className="flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-1 py-2 text-xs text-gray-300 transition hover:bg-white/10 hover:text-white">
-                          <Icon size={16} className="text-violet-300" />
-                          {acc.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-        )}
       </div>
     </div>
   );

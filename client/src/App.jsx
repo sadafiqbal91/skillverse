@@ -32,6 +32,7 @@ import StudentLookupPage from "./pages/admin/StudentLookupPage";
 import UsersPage from "./pages/admin/UsersPage";
 import SchoolTreePage from "./pages/admin/SchoolTreePage";
 import ParentDashboard from "./pages/parent/ParentDashboard";
+import Toast from "./components/Toast";
 
 function Soon({ title }) {
   return (
@@ -54,6 +55,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <Toast />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />

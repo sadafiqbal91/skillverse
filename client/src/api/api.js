@@ -10,6 +10,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// 🍞 Screen ke kone mein chhota message (page par kahin bhi ho, nazar aaye)
+export const toast = (text, tone = "info") =>
+  window.dispatchEvent(new CustomEvent("sv-toast", { detail: { text, tone } }));
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -18,6 +22,9 @@ api.interceptors.response.use(
       localStorage.removeItem("sv_user");
       window.location.href = "/login";
     }
+    // 🔒 Demo Lock ka message: scroll kiye baghair nazar aaye
+    const msg = err.response?.data?.message || "";
+    if (err.response?.status === 403 && msg.includes("This is a demo")) toast(msg, "lock");
     return Promise.reject(err);
   }
 );
