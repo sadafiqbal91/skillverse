@@ -21,6 +21,28 @@ const DEMO = [
       { label: "Student", who: "Ali Khan", icon: GraduationCap, slug: "demo", email: "student@demo.com", password: "demo123" },
       { label: "Parent", who: "Mr. Khan, Ali's father", icon: Users, slug: "demo", email: "parent@demo.com", password: "demo123" },
     ],
+    // 🏫 Poori Class 5-A: kaun kya hai (audience ko kuch yaad nahi rakhna)
+    people: [
+      { title: "🏫 Principal", list: [
+        { label: "Principal", who: "Mrs. Ayesha", note: "School Tree, plan, results", email: "principal@demo.com" },
+      ] },
+      { title: "👩‍🏫 Teachers", list: [
+        { label: "Teacher", who: "Mr. Bilal", note: "Maths, Computer · ⭐ Class teacher 5-A", email: "teacher@demo.com" },
+        { label: "Teacher", who: "Miss Hina", note: "Science, Urdu", email: "science@demo.com" },
+        { label: "Teacher", who: "Miss Sana", note: "English, Social Studies", email: "english@demo.com" },
+        { label: "Teacher", who: "Mr. Usman", note: "Islamiat", email: "islamiat@demo.com" },
+      ] },
+      { title: "🧒 Students", list: [
+        { label: "Student", who: "Ali Khan", note: "🔴 Weak in Fractions", email: "student@demo.com" },
+        { label: "Student", who: "Omar Shah", note: "🌱 Re-test ready, try it!", email: "omar@demo.com" },
+        { label: "Student", who: "Sara Ahmed", note: "⭐ Top student", email: "sara@demo.com" },
+        { label: "Student", who: "Fatima Noor", note: "🔮 Early warning", email: "fatima@demo.com" },
+      ] },
+      { title: "👨‍👩‍👧 Parents", list: [
+        { label: "Parent", who: "Mr. Khan", note: "Ali's father", email: "parent@demo.com" },
+        { label: "Parent", who: "Mrs. Noor", note: "Fatima's mother", email: "fatima.parent@demo.com" },
+      ] },
+    ],
   },
   {
     id: "school",
@@ -94,7 +116,7 @@ export default function Login() {
   const pickDemo = (acc) => {
     setForm({ slug: acc.slug, email: acc.email, password: acc.password });
     setError("");
-    setPicked({ label: acc.label, who: acc.who, school: group.school });
+    setPicked({ label: acc.label, who: acc.who, school: group.school, email: acc.email });
   };
 
   const onSubmit = async (e) => {
@@ -204,10 +226,34 @@ export default function Login() {
               </div>
 
               {tab === "demo" && (
-                <p className="mt-2 text-center text-[11px] text-cyan-300">🎭 Try anything here! Pick a role, then press Sign in.</p>
+                <p className="mt-2 text-center text-[11px] text-cyan-300">🎭 Class 5-A · tap anyone, then press Sign in · password <b>demo123</b></p>
               )}
 
-              {/* Roles: ek hi line */}
+              {/* 🏫 Demo Academy: poori class, naam + kaun hai */}
+              {group.people ? (
+                <div className="mt-2.5 max-h-80 space-y-2.5 overflow-y-auto pr-1">
+                  {group.people.map((g) => (
+                    <div key={g.title}>
+                      <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wider text-gray-500">{g.title}</p>
+                      <div className="space-y-1">
+                        {g.list.map((p) => {
+                          const active = picked?.email === p.email && picked?.school === group.school;
+                          return (
+                            <button key={p.email} type="button" onClick={() => pickDemo({ ...p, slug: "demo", password: "demo123" })}
+                              className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs transition ${
+                                active ? "border-violet-500 bg-violet-500/15 text-white" : "border-white/10 bg-white/[0.03] text-gray-300 hover:bg-white/10 hover:text-white"
+                              }`}>
+                              <span className="font-semibold">{p.who}</span>
+                              <span className="text-right text-[11px] text-gray-400">{p.note}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+              /* Roles: ek hi line */
               <div className="mt-2.5 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${group.accounts.length}, minmax(0, 1fr))` }}>
                 {group.accounts.map((acc) => {
                   const Icon = acc.icon;
@@ -225,6 +271,7 @@ export default function Login() {
                   );
                 })}
               </div>
+              )}
             </div>
           )}
         </div>

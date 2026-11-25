@@ -58,6 +58,9 @@ app.use("/api", async (req, res, next) => {
   }
 });
 
+// 🔒 Demo Academy mein password reset / delete band (sirf demo par)
+app.use("/api", require("./middleware/demoLock"));
+
 // Routes
 app.use("/api/organizations", require("./routes/organizationRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
