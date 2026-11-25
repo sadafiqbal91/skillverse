@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CalendarClock, HeartHandshake, ClipboardList, FileText, BookOpen, Trophy,
-  Volume2, Square, Compass, Baby, Target, ChevronDown, ExternalLink, Eye,
+  Volume2, Square, Compass, Baby, Target, ChevronDown, ExternalLink, Eye, Award,
 } from "lucide-react";
 import api, { errMsg } from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
@@ -10,6 +10,7 @@ import { Card, Empty, Loading, ErrorBox } from "../../components/ui";
 import ParentGuide from "../../components/ParentGuide";
 import AnswersDrawer from "../../components/AnswersDrawer";
 import DiaryCard from "../../components/DiaryCard";
+import { TermMarks } from "../student/ProgressPage";
 import { speak, stopSpeak, canSpeak } from "../../utils/speak";
 
 const T = {
@@ -23,6 +24,7 @@ const T = {
     tapResult: "Tap to see answers", tapOpen: "Tap to open", retest: "Re-test", instructions: "Instructions", feedback: "Teacher's feedback", file: "Open file",
     tapSubject: "Tap a subject to see its tests, homework and results", sTests: "Tests", sWork: "Homework", sResults: "Quiz results", sNotes: "Notes",
     nothing: "Nothing here yet", toDo: (n) => `${n} to do`, avg: "avg", progress: "Lessons done",
+    term: "Term marks (out of 25)", termHint: "🧠 Quizzes 15 + 📝 Homework 10. Re-tests are practice and never reduce marks. The final exam (75) is separate.",
   },
   ur: {
     hello: "Assalam o Alaikum", sub: "Aapka bachcha kaisa ja raha hai, yahan dekhein.", upcoming: "Aane wale tests",
@@ -35,6 +37,7 @@ const T = {
     tapResult: "Jawab dekhne ke liye dabayein", tapOpen: "Kholne ke liye dabayein", retest: "Re-test", instructions: "Hidayat", feedback: "Teacher ki raaye", file: "File kholiye",
     tapSubject: "Subject par dabayein: us ke tests, homework aur results", sTests: "Tests", sWork: "Homework", sResults: "Quiz ke results", sNotes: "Notes",
     nothing: "Abhi kuch nahi", toDo: (n) => `${n} baqi`, avg: "avg", progress: "Lessons mukammal",
+    term: "Term ke marks (25 mein se)", termHint: "🧠 Quiz 15 + 📝 Homework 10. Re-test sirf practice hai, is se marks kam nahi hote. Final exam (75) alag hai.",
   },
 };
 
@@ -61,7 +64,7 @@ const daysLeft = (d) => {
 };
 
 // 📚 Har subject ka card: andar us ke tests, homework, quiz results aur notes
-function SubjectCard({ c, items, t, open, onToggle, onAnswers, onSubmit, first }) {
+function SubjectCard({ c, items, t, open, onToggle, onAnswers, onSubmit, first, term }) {
   const { tests, work, results, notes } = items;
   const toDo = work.filter((a) => a.state === "pending" || a.state === "late").length;
   const avg = results.length ? Math.round(results.reduce((x, a) => x + a.percent, 0) / results.length) : null;
@@ -90,6 +93,7 @@ function SubjectCard({ c, items, t, open, onToggle, onAnswers, onSubmit, first }
           {toDo > 0 && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-300">📝 {t.toDo(toDo)}</span>}
           {avg != null && <span className={`rounded-full bg-white/5 px-2 py-0.5 ${tone(avg)}`}>🏆 {avg}% {t.avg}</span>}
           {notes.length > 0 && <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-cyan-300">📄 {notes.length}</span>}
+          {term?.total != null && <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-violet-200">📊 {term.total}/{term.max}</span>}
         </div>
       </button>
 
@@ -339,6 +343,7 @@ export default function ParentDashboard() {
                 const id = String(c.courseId);
                 return (
                   <SubjectCard key={id} c={c} t={t} first={first} items={bySubject[id]}
+                    term={(data.termScores || []).find((x) => String(x.courseId) === id)}
                     open={openSubject === id} onToggle={() => setOpenSubject(openSubject === id ? null : id)}
                     onAnswers={(aid) => setAnswersUrl(`/parents/children/${cid}/attempts/${aid}`)}
                     onSubmit={(courseId) => openChild(`/student/courses/${courseId}`)} />
@@ -346,6 +351,14 @@ export default function ParentDashboard() {
               })}
             </div>
           </div>
+
+          {/* 📊 Term marks */}
+          {data.termScores?.length > 0 && (
+            <Card title={t.term} icon={Award}>
+              <TermMarks rows={data.termScores} compact />
+              <p className="mt-3 text-[11px] text-gray-500">{t.termHint}</p>
+            </Card>
+          )}
 
           <div className="grid gap-5 lg:grid-cols-2">
             {/* 📅 Upcoming tests */}

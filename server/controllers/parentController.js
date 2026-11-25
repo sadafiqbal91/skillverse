@@ -170,6 +170,7 @@ const childOverview = async (req, res) => {
       reasonUr,
       summary: progress.summary,
       courses: progress.courses,
+      termScores: progress.termScores || [], // 📊 25 marks
       topics: progress.topics,
       weakTopics: weak,
       recentAttempts: attempts.map((a) => ({

@@ -1,9 +1,56 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, ListChecks, NotebookPen, History, BookOpen, CheckCircle2, Brain, AlertTriangle, ChevronDown, Eye } from "lucide-react";
+import { BarChart3, ListChecks, NotebookPen, History, BookOpen, CheckCircle2, Brain, AlertTriangle, ChevronDown, Eye, Award } from "lucide-react";
 import api, { errMsg } from "../../api/api";
 import { Card, StatCard, Badge, Empty, Loading, ErrorBox } from "../../components/ui";
 import TopicBars, { LEVELS } from "../../components/TopicBars";
 import AnswersDrawer from "../../components/AnswersDrawer";
+
+// 📊 Term marks: 🧠 15 + 📝 10 = 25
+const markTone = (m, max) => {
+  const p = (m / max) * 100;
+  return p >= 70 ? "bg-emerald-500/15 text-emerald-300" : p >= 50 ? "bg-amber-500/15 text-amber-300" : "bg-rose-500/15 text-rose-300";
+};
+export function TermMarks({ rows, compact = false }) {
+  if (!rows?.length) return null;
+  const part = (x) => (x ? <span>{x.marks}<span className="text-gray-500">/{x.max}</span></span> : <span className="text-gray-600">—</span>);
+  return (
+    <div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[420px] text-sm">
+          <thead>
+            <tr className="border-b border-white/[0.06] text-left text-xs text-gray-500">
+              <th className="pb-2 pr-3 font-medium">Subject</th>
+              <th className="pb-2 pr-3 font-medium">🧠 Quizzes</th>
+              <th className="pb-2 pr-3 font-medium">📝 Homework</th>
+              <th className="pb-2 font-medium">📊 Term</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={String(r.courseId)} className="border-b border-white/[0.04] last:border-0">
+                <td className="py-2.5 pr-3 font-medium">{r.title}</td>
+                <td className="py-2.5 pr-3">{part(r.quiz)}</td>
+                <td className="py-2.5 pr-3">{part(r.homework)}</td>
+                <td className="py-2.5">
+                  {r.total == null ? <span className="text-xs text-gray-500">Not started</span> : (
+                    <span className={"rounded-lg px-2 py-0.5 font-semibold " + markTone(r.total, r.complete ? r.max : (r.quiz?.max || 0) + (r.homework?.max || 0))}>
+                      {r.total}<span className="opacity-70">/{r.max}</span>{!r.complete && <span className="ml-1 text-[10px] opacity-70">so far</span>}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!compact && (
+        <p className="mt-3 text-[11px] text-gray-500">
+          🧠 Quizzes = 15 (first try of each quiz) · 📝 Homework = 10 (checked work) · 🌱 Re-tests and revision are practice, they don't reduce your marks · The final exam (75) is separate.
+        </p>
+      )}
+    </div>
+  );
+}
 
 function MistakeNotebook({ mistakes }) {
   const [open, setOpen] = useState(false);
@@ -126,6 +173,12 @@ export default function ProgressPage() {
         <StatCard icon={Brain} value={summary.averageQuizPercent} label="Quiz average %" tone="amber" />
         <StatCard icon={AlertTriangle} value={weakTopics.length} label="Weak topics" tone="rose" />
       </div>
+
+      {data.termScores?.length > 0 && (
+        <Card title="Term Marks (out of 25)" icon={Award}>
+          <TermMarks rows={data.termScores} />
+        </Card>
+      )}
 
       <Card title="Topic Mastery" icon={BarChart3}>
         <TopicBars topics={topics} />

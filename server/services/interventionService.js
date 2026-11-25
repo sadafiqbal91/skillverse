@@ -94,6 +94,22 @@ const evaluateAttempt = async (attempt, passingMarks) => {
         message: `${iv.topic} (${course.title}): failed all ${MAX_RETESTS} re-tests. The teacher has been told to help personally.`,
         meta: { ...meta, studentId: attempt.studentId },
       });
+      // 👩‍🏫 Class teacher ko bhi (agar wo khud is subject ki teacher nahi)
+      try {
+        const SchoolClass = require("../models/SchoolClass");
+        const classes = await SchoolClass.find({ organizationId: org, courseIds: course._id }).select("name classTeacherId");
+        for (const k of classes) {
+          if (!k.classTeacherId || String(k.classTeacherId) === String(course.instructorId)) continue;
+          await notify(org, [k.classTeacherId], {
+            type: "class_one_on_one",
+            title: `🙋 ${k.name} · ${student?.name || "A student"} needs 1-on-1`,
+            message: `${iv.topic} (${course.title}): failed all ${MAX_RETESTS} re-tests. The subject teacher will help personally.`,
+            meta: { ...meta, studentId: attempt.studentId },
+          });
+        }
+      } catch (e) {
+        // class na mile to kuch nahi
+      }
     } else if (iv.level === "needs_practice") {
       // 🔴 Round 1 failed → teacher sends notes
       iv.level = "intervention";

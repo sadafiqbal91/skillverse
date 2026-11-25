@@ -6,6 +6,7 @@ const Submission = require("../models/Submission");
 const Intervention = require("../models/Intervention");
 const User = require("../models/User");
 const { notify, parentsOf } = require("../services/interventionService");
+const { buildTermScores } = require("../services/termScoreService");
 
 const handleError = (res, error) => {
   if (error.name === "CastError") return res.status(400).json({ message: "Invalid ID" });
@@ -33,6 +34,7 @@ const courseResults = async (req, res) => {
       Attempt.find({ courseId: course._id, status: "submitted" }).select("studentId quizId kind percent passed"),
     ]);
     const revisionIds = new Set(quizzes.filter((q) => q.kind === "revision").map((q) => String(q._id)));
+    const term = await buildTermScores(enrollments.filter((e) => e.studentId).map((e) => e.studentId._id), [course._id]);
 
     const rows = enrollments.filter((e) => e.studentId).map((e) => {
       const mine = attempts.filter((a) => a.studentId.equals(e.studentId._id));
@@ -53,6 +55,7 @@ const courseResults = async (req, res) => {
         average: avg(taken.map((c) => c.best)), // 📝 revision marks bhi isi mein gin'te hain
         revisionAverage: avg(revTaken),
         retests: { total: retests.length, passed: retests.filter((a) => a.passed).length },
+        term: term(e.studentId._id, course._id), // 📊 15 + 10 = 25
       };
     });
 

@@ -154,16 +154,19 @@ export default function ResultsPage({ canRemind = true }) {
             ))}
           </div>
 
-          <Card title="Gradebook" icon={BarChart3} action={<span className="text-xs text-gray-500">Best score per quiz · click a student</span>}>
+          <Card title="Gradebook" icon={BarChart3} action={<span className="text-xs text-gray-500">Best score per quiz · Term = 🧠 15 + 📝 10 (re-tests are practice) · click a student</span>}>
             {!data.students.length ? <Empty text="No students enrolled yet." /> : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[600px] text-sm">
+                <table className="w-full min-w-[760px] text-sm">
                   <thead>
                     <tr className="border-b border-white/[0.06] text-left text-xs text-gray-500">
                       <th className="pb-2 pr-3 font-medium">Student</th>
                       {data.quizzes.map((q) => <th key={q._id} className="pb-2 pr-3 font-medium">{q.title}</th>)}
                       <th className="pb-2 pr-3 font-medium">Re-tests</th>
-                      <th className="pb-2 font-medium">Average</th>
+                      <th className="pb-2 pr-3 font-medium">Average</th>
+                      <th className="pb-2 pr-3 font-medium" title="First try of each quiz">🧠 /15</th>
+                      <th className="pb-2 pr-3 font-medium" title="Checked homework">📝 /10</th>
+                      <th className="pb-2 font-medium">📊 Term /25</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -180,7 +183,16 @@ export default function ResultsPage({ canRemind = true }) {
                           );
                         })}
                         <td className="py-2.5 pr-3 text-xs text-gray-400">{s.retests.total ? `${s.retests.total} (${s.retests.passed} ✅)` : "—"}</td>
-                        <td className="py-2.5">{s.average != null ? <Badge className={tone(s.average)}>{s.average}%</Badge> : <span className="text-gray-500">—</span>}</td>
+                        <td className="py-2.5 pr-3">{s.average != null ? <Badge className={tone(s.average)}>{s.average}%</Badge> : <span className="text-gray-500">—</span>}</td>
+                        <td className="py-2.5 pr-3 text-gray-300">{s.term?.quiz ? s.term.quiz.marks : <span className="text-gray-600">—</span>}</td>
+                        <td className="py-2.5 pr-3 text-gray-300">{s.term?.homework ? s.term.homework.marks : <span className="text-gray-600">—</span>}</td>
+                        <td className="py-2.5">
+                          {s.term?.total != null ? (
+                            <span className={`rounded-md px-2 py-0.5 font-semibold ${tone((s.term.total / ((s.term.quiz?.max || 0) + (s.term.homework?.max || 0))) * 100)}`}>
+                              {s.term.total}{!s.term.complete && <span className="ml-1 text-[10px] opacity-70">so far</span>}
+                            </span>
+                          ) : <span className="text-gray-600">—</span>}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

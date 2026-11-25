@@ -2,6 +2,7 @@ const Enrollment = require("../models/Enrollment");
 const Attempt = require("../models/Attempt");
 const Question = require("../models/Question");
 const Intervention = require("../models/Intervention");
+const { buildTermScores } = require("../services/termScoreService");
 
 const levelOf = (p) => (p >= 70 ? "strong" : p >= 50 ? "average" : "weak");
 
@@ -78,6 +79,15 @@ const buildProgress = async (studentId, organizationId) => {
     ? Math.round(attempts.reduce((sum, a) => sum + a.percent, 0) / attempts.length)
     : 0;
 
+  // 📊 Term marks (25) har subject ke
+  const courseIds = enrollments.map((e) => e.courseId?._id).filter(Boolean);
+  const term = await buildTermScores([studentId], courseIds);
+  const termScores = enrollments.filter((e) => e.courseId).map((e) => ({
+    courseId: e.courseId._id,
+    title: e.courseId.title,
+    ...term(studentId, e.courseId._id),
+  }));
+
   return {
     summary: {
       coursesEnrolled: enrollments.length,
@@ -97,6 +107,7 @@ const buildProgress = async (studentId, organizationId) => {
       quiz: a.quizId?.title, percent: a.percent, passed: a.passed, submittedAt: a.submittedAt,
     })),
     mistakeNotebook,
+    termScores,
   };
 };
 
