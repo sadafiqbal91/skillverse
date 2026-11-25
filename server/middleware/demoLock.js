@@ -1,9 +1,10 @@
-// 🔒 Demo Lock: login page par jin institutes ke password sab ke saamne hain
-// (Demo Academy, City School, Aptech), wahan audience sab try kare, lekin tod na sake.
+// 🔒 Demo Lock: Demo Academy (password sab ke saamne) mein audience sab try kare
+// lekin tod na sake (password reset / delete / class edit band).
 // Naye / asal schools par KOI asar nahi.
-const PUBLIC_SLUGS = ["demo", "cityschool", "aptechkhi"];
+const PUBLIC_SLUGS = ["demo"]; // City School / Aptech ke password ab sirf aap ke paas hain
 const jwt = require("jsonwebtoken");
 const Organization = require("../models/Organization");
+const User = require("../models/User");
 
 // Ye kaam demo mein band hain (baaki sab khula)
 const LOCKED = [
@@ -31,20 +32,36 @@ const getLockedIds = async () => {
   return new Set(orgs.map((o) => String(o._id)));
 };
 
+// Token se institute nikalo (payload ka naam kuch bhi ho, phir bhi chale)
+const orgOf = async (req) => {
+  const raw = req.headers.authorization || req.headers["x-auth-token"] || "";
+  const token = String(raw).replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+  const p = jwt.verify(token, process.env.JWT_SECRET);
+  const org = p.organizationId || p.orgId || p.organization || p.user?.organizationId;
+  if (org) return String(org);
+  const uid = p.userId || p.id || p._id || p.user?._id || p.user?.id;
+  if (!uid) return null;
+  const u = await User.findById(uid).select("organizationId");
+  return u?.organizationId ? String(u.organizationId) : null;
+};
+
 const demoLock = async (req, res, next) => {
+  // 🩺 Check: https://skillverse-api.vercel.app/api/lock-status
+  if (req.method === "GET" && req.path === "/lock-status") {
+    return res.json({ demoLock: "active ✅", institutes: PUBLIC_SLUGS });
+  }
+  if (!isLocked(req.method, req.path)) return next();
   try {
-    if (!isLocked(req.method, req.path)) return next();
-    const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-    if (!token) return next();
-    const { organizationId } = jwt.verify(token, process.env.JWT_SECRET);
+    const org = await orgOf(req);
     const ids = await getLockedIds();
-    if (ids.has(String(organizationId))) {
+    if (org && ids.has(org)) {
       return res.status(403).json({ message: "🔒 This is a demo, so this action is locked. Everything else is open to try!" });
     }
-    next();
   } catch (e) {
-    next(); // token ghalat ho to asal route khud jawab dega
+    console.error("demoLock:", e.message); // token ghalat ho to asal route khud jawab dega
   }
+  next();
 };
 
 module.exports = demoLock;
