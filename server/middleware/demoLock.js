@@ -2,6 +2,8 @@
 // lekin tod na sake (password reset / delete / class edit band).
 // Naye / asal schools par KOI asar nahi.
 const PUBLIC_SLUGS = ["demo"]; // City School / Aptech ke password ab sirf aap ke paas hain
+// 🚪 Private institutes: koi ajnabi "Create an account" se khud student na ban sake
+const CLOSED_SIGNUP = ["cityschool", "aptechkhi"];
 const jwt = require("jsonwebtoken");
 const Organization = require("../models/Organization");
 const User = require("../models/User");
@@ -49,7 +51,14 @@ const orgOf = async (req) => {
 const demoLock = async (req, res, next) => {
   // 🩺 Check: https://skillverse-api.vercel.app/api/lock-status
   if (req.method === "GET" && req.path === "/lock-status") {
-    return res.json({ demoLock: "active ✅", institutes: PUBLIC_SLUGS });
+    return res.json({ demoLock: "active ✅", institutes: PUBLIC_SLUGS, closedSignup: CLOSED_SIGNUP });
+  }
+  // 🚪 City School / Aptech mein khud se account banana band (principal "Add user" se add karti hai)
+  if (req.method === "POST" && /^\/auth\/register/i.test(req.path)) {
+    const vals = Object.values(req.body || {}).filter((v) => typeof v === "string").map((v) => v.trim().toLowerCase());
+    if (vals.some((v) => CLOSED_SIGNUP.includes(v))) {
+      return res.status(403).json({ message: "🔒 This is a private institute. Please ask your school to add your account." });
+    }
   }
   if (!isLocked(req.method, req.path)) return next();
   try {
