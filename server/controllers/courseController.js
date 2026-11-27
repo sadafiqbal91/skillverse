@@ -10,7 +10,7 @@ const { notify } = require("../services/interventionService");
 const STATUSES = ["upcoming", "this_week", "covered"];
 const TERMS = [1, 2, 3];
 // "1" / 1 → 1, "" / null / 0 → null (term hatao)
-const toTerm = (v) => (v === null || v === "" || v === 0 || v === "0" ? null : Number(v));
+const toTerm = (v) => (v === undefined || v === null || v === "" || v === 0 || v === "0" ? null : Number(v));
 
 const handleError = (res, error) => {
   if (error.name === "CastError") return res.status(400).json({ message: "Invalid ID" });
