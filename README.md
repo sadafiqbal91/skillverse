@@ -145,6 +145,14 @@ The required flow, step by step (also shown in the video):
 - Each institute's data is **separate and private** (every record carries its institute's ID)
 - Labels fit the institute: Class / Section / Batch, Subject / Course
 - 🔒 **Demo lock:** in the public Demo Academy, password changes and deletes are locked so visitors can't break the demo; private institutes can't be joined without the school adding you
+- 👥 **Who adds whom:**
+
+| | Demo Academy (public) | Private institute (e.g. a real school) |
+|---|---|---|
+| Student account | Student signs up with code `demo` | Principal creates it (sign-up is closed) |
+| Enroll in a course | Student enrolls in any published course | Same: student enrolls in their own institute's courses |
+| Teacher / Parent account | Created by the principal | Created by the principal |
+| Put a student in a class (e.g. 5-A) | Principal | Principal |
 
 ---
 
