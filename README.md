@@ -6,7 +6,7 @@
 
 🌐 **Live website:** https://skillverse-mu-snowy.vercel.app
 🎭 **Try the demo:** https://skillverse-mu-snowy.vercel.app/login/demo (tap any person, no password needed)
-🎬 **Video walkthrough (4 min):** [Watch here](VIDEO_LINK_HERE)
+🎬 **Video walkthrough (3 min):** [Watch here](https://youtu.be/wywHtREqYEc)
 
 👩‍💻 Built by **Sadaf Iqbal** · Project 02: Learning Management & Smart Assessment Platform (EdTech)
 
