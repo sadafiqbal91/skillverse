@@ -34,10 +34,17 @@ const buildEarlyWarnings = async (organizationId, { instructorId } = {}) => {
       .select("courseId title testDate").sort("testDate"),
     Assignment.find({ courseId: { $in: ids }, dueDate: { $lt: new Date(now), $gte: new Date(now - 14 * DAY) } }).select("courseId title dueDate"),
     Submission.find({ courseId: { $in: ids } }).select("assignmentId studentId"),
-    Intervention.find({ courseId: { $in: ids }, level: { $in: ["intervention", "one_on_one"] } }).select("courseId studentId"),
+    Intervention.find({ courseId: { $in: ids }, level: { $in: ["intervention", "one_on_one", "resolved"] } }).select("courseId studentId level resolvedAt"),
   ]);
 
-  const alreadyHelped = new Set(ivs.map((i) => key(i.studentId, i.courseId)));
+  const alreadyHelped = new Set(ivs.filter((i) => i.level !== "resolved").map((i) => key(i.studentId, i.courseId)));
+  // 🎉 Re-test se recover hua? To purane low quiz par dobara warning nahi
+  const recoveredAt = new Map();
+  for (const i of ivs) {
+    if (i.level !== "resolved" || !i.resolvedAt) continue;
+    const k = key(i.studentId, i.courseId);
+    if (!recoveredAt.has(k) || recoveredAt.get(k) < i.resolvedAt) recoveredAt.set(k, i.resolvedAt);
+  }
   const submitted = new Set(subs.map((s) => key(s.studentId, s.assignmentId)));
   const out = [];
 
@@ -62,7 +69,8 @@ const buildEarlyWarnings = async (organizationId, { instructorId } = {}) => {
 
     // 📊 Aakhri quiz pass ke qareeb ya neeche
     const latest = mine[mine.length - 1];
-    if (latest && !dropping) {
+    const recovered = latest && recoveredAt.get(key(sid, cid)) > new Date(latest.submittedAt);
+    if (latest && !dropping && !recovered) {
       if (latest.percent < passing) {
         score += 2;
         reasons.push({ icon: "📊", text: "Last quiz " + latest.percent + "%" });
